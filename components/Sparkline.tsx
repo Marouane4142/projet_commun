@@ -1,0 +1,68 @@
+type Props = {
+  points: number[];
+  color?: string;
+  height?: number;
+  width?: number;
+  className?: string;
+};
+
+/**
+ * Sparkline en SVG pur (aucune lib) : choix eco-conception pour limiter le
+ * poids JS embarque cote client.
+ */
+export function Sparkline({
+  points,
+  color = "#34d399",
+  height = 40,
+  width = 140,
+  className,
+}: Props) {
+  if (!points || points.length < 2) {
+    return (
+      <div
+        className={className}
+        style={{ height }}
+        aria-hidden
+        role="presentation"
+      />
+    );
+  }
+
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const stepX = width / (points.length - 1);
+
+  const coords = points.map((value, index) => {
+    const x = index * stepX;
+    const y = height - ((value - min) / span) * (height - 4) - 2;
+    return [x, y] as const;
+  });
+
+  const line = coords
+    .map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`)
+    .join(" ");
+  const area = `${line} L${width},${height} L0,${height} Z`;
+  const gradId = `spark-${color.replace("#", "")}`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      className={className}
+      preserveAspectRatio="none"
+      aria-hidden
+      role="presentation"
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gradId})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}

@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum SensorType {
+  TEMPERATURE  @map("temperature")
+  DECIBEL      @map("decibel")
+  SMOKE        @map("smoke")
+  GAS          @map("gas")
+  PEOPLE_COUNT @map("people_count")
+}
+
+enum ReadingStatus {
+  OK       @map("ok")
+  WARNING  @map("warning")
+  ALERT    @map("alert")
+  CRITICAL @map("critical")
+}
+
+enum MatchStatus {
+  SCHEDULED @map("scheduled")
+  LIVE      @map("live")
+  HALFTIME  @map("halftime")
+  FINISHED  @map("finished")
+}
+
+enum MatchEventType {
+  GOAL        @map("goal")
+  YELLOW_CARD @map("yellow_card")
+  RED_CARD    @map("red_card")
+  HALFTIME    @map("halftime")
+  FULLTIME    @map("fulltime")
+  OTHER       @map("other")
+}
+
+enum AlertSeverity {
+  INFO     @map("info")
+  WARNING  @map("warning")
+  ALERT    @map("alert")
+  CRITICAL @map("critical")
+}
+
+model BarZone {
+  id            Int             @id @default(autoincrement())
+  name          String
+  supporterTeam String
+  color         String
+  maxCapacity   Int
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  sensors       Sensor[]
+  readings      SensorReading[]
+  alerts        Alert[]
+}
+
+model Sensor {
+  id        Int             @id @default(autoincrement())
+  name      String
+  type      SensorType
+  unit      String
+  zoneId    Int
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  zone      BarZone         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  readings  SensorReading[]
+
+  @@index([zoneId])
+}
+
+model SensorReading {
+  id         Int           @id @default(autoincrement())
+  sensorId   Int
+  zoneId     Int
+  type       SensorType
+  value      Float
+  unit       String
+  status     ReadingStatus @default(OK)
+  measuredAt DateTime
+  createdAt  DateTime      @default(now())
+  sensor     Sensor        @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+  zone       BarZone       @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@index([sensorId])
+  @@index([zoneId])
+  @@index([type, measuredAt])
+}
+
+model Match {
+  id           Int          @id @default(autoincrement())
+  externalId   String?      @unique
+  competition  String
+  homeTeam     String
+  awayTeam     String
+  homeScore    Int          @default(0)
+  awayScore    Int          @default(0)
+  status       MatchStatus  @default(SCHEDULED)
+  minute       Int          @default(0)
+  kickoffAt    DateTime
+  lastSyncedAt DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  events       MatchEvent[]
+
+  @@map("matches")
+}
+
+model MatchEvent {
+  id          Int            @id @default(autoincrement())
+  matchId     Int
+  minute      Int
+  type        MatchEventType
+  team        String?
+  player      String?
+  description String
+  createdAt   DateTime       @default(now())
+  match       Match          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+}
+
+model Threshold {
+  id            Int        @id @default(autoincrement())
+  metricType    SensorType @unique
+  warningValue  Float
+  alertValue    Float
+  criticalValue Float
+  unit          String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Alert {
+  id          Int           @id @default(autoincrement())
+  zoneId      Int
+  type        SensorType
+  severity    AlertSeverity
+  message     String
+  isResolved  Boolean       @default(false)
+  triggeredAt DateTime
+  resolvedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  zone        BarZone       @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  @@index([zoneId])
+  @@index([isResolved])
+}
