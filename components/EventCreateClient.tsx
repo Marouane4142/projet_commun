@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ElectronicCard, FanEvent, MatchOption } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
+import { getLocalBridgeStatus, startLocalBridgeEvent } from "@/lib/localBridgeClient";
 import { MatchSelector } from "./MatchSelector";
 
 const cardRefreshDelay = 2_000;
@@ -85,8 +86,7 @@ export function EventCreateClient() {
     }
 
     try {
-      const response = await fetch("/api/cards", { cache: "no-store" });
-      const payload = (await response.json()) as CardsResponse;
+      const payload = (await getLocalBridgeStatus()) as CardsResponse;
 
       const freshCards: ElectronicCard[] = payload.cards ?? [];
       const now = Date.now();
@@ -187,12 +187,24 @@ export function EventCreateClient() {
           zoneBTeam,
           zoneACard,
           zoneBCard,
+          skipBridgeStart: true,
         }),
       });
       const payload = (await response.json()) as { event?: FanEvent; error?: string };
 
       if (!response.ok || !payload.event) {
         throw new Error(payload.error ?? "Creation impossible.");
+      }
+
+      if (!zoneACardId || !zoneBCardId) {
+        throw new Error("Carte invalide.");
+      }
+
+      try {
+        await startLocalBridgeEvent(payload.event.id, [zoneACardId, zoneBCardId]);
+      } catch (bridgeError) {
+        await archiveEvent(payload.event.id);
+        throw bridgeError;
       }
 
       window.localStorage.setItem("fanbar:selected-event-id", String(payload.event.id));
@@ -338,6 +350,23 @@ export function EventCreateClient() {
       </section>
     </div>
   );
+}
+
+async function archiveEvent(eventId: number) {
+  try {
+    await fetch(`/api/events/${eventId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: "archived",
+        skipBridgeStop: true,
+      }),
+    });
+  } catch {
+    return;
+  }
 }
 
 function TeamSelect({

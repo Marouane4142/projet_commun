@@ -32,6 +32,7 @@ export async function PATCH(
     status?: unknown;
     finalHomeScore?: unknown;
     finalAwayScore?: unknown;
+    skipBridgeStop?: unknown;
   };
   const status = String(body.status ?? "") as FanEventStatus;
 
@@ -49,7 +50,12 @@ export async function PATCH(
 
     let bridgeWarning: string | null = null;
 
-    if (status === "finished" || status === "archived" || status === "planned") {
+    const skipBridgeStop = body.skipBridgeStop === true;
+
+    if (
+      !skipBridgeStop &&
+      (status === "finished" || status === "archived" || status === "planned")
+    ) {
       try {
         await stopBridgeEvent(event.id);
       } catch (error) {

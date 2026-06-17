@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DashboardData, DashboardVenue, FanEvent, ZoneScore } from "@/lib/types";
 import { formatDateTime, formatValue, metricLabels } from "@/lib/format";
+import { stopLocalBridgeEvent } from "@/lib/localBridgeClient";
 
 const refreshDelay = 2_000;
 const eventStorageKey = "fanbar:selected-event-id";
@@ -118,6 +119,8 @@ export function DashboardClient() {
     setError(null);
 
     try {
+      await stopLocalBridgeEvent(selectedEvent.id);
+
       const response = await fetch(`/api/events/${selectedEvent.id}`, {
         method: "PATCH",
         headers: {
@@ -127,6 +130,7 @@ export function DashboardClient() {
           status: "finished",
           finalHomeScore: data.match.homeScore,
           finalAwayScore: data.match.awayScore,
+          skipBridgeStop: true,
         }),
       });
       const payload = (await response.json()) as { error?: string };

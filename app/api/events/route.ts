@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     zoneBTeam?: unknown;
     zoneACard?: unknown;
     zoneBCard?: unknown;
+    skipBridgeStart?: unknown;
   };
 
   if (!isValidMatch(body.match)) {
@@ -69,13 +70,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  try {
-    await assertCardsAvailable([zoneACardId, zoneBCardId]);
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Cartes indisponibles." },
-      { status: 409 },
-    );
+  const skipBridgeStart = body.skipBridgeStart === true;
+
+  if (!skipBridgeStart) {
+    try {
+      await assertCardsAvailable([zoneACardId, zoneBCardId]);
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Cartes indisponibles." },
+        { status: 409 },
+      );
+    }
   }
 
   try {
@@ -89,23 +94,25 @@ export async function POST(request: NextRequest) {
       status: "active",
     });
 
-    try {
-      await startBridgeEvent(event.id, [zoneACardId, zoneBCardId]);
-    } catch (bridgeError) {
-      await updateEventStatus({
-        id: String(event.id),
-        status: "archived",
-      });
+    if (!skipBridgeStart) {
+      try {
+        await startBridgeEvent(event.id, [zoneACardId, zoneBCardId]);
+      } catch (bridgeError) {
+        await updateEventStatus({
+          id: String(event.id),
+          status: "archived",
+        });
 
-      return NextResponse.json(
-        {
-          error:
-            bridgeError instanceof Error
-              ? bridgeError.message
-              : "Une carte ne repond pas a la passerelle.",
-        },
-        { status: 409 },
-      );
+        return NextResponse.json(
+          {
+            error:
+              bridgeError instanceof Error
+                ? bridgeError.message
+                : "Une carte ne repond pas a la passerelle.",
+          },
+          { status: 409 },
+        );
+      }
     }
 
     return NextResponse.json({ event }, { status: 201 });
