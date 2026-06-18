@@ -6,9 +6,9 @@ import type {
 } from "./types";
 
 /**
- * Historique des evenements termines. Toutes les statistiques (son par zone,
- * moyennes, pic d'affluence) sont CAPTUREES a la cloture et stockees dans
- * g1a_events -> l'historique reste exact meme pour les vieux evenements et
+ * Historique des événements terminés. Toutes les statistiques (son par zone,
+ * moyennes, pic d'affluence) sont CAPTURÉES à la clôture et stockées dans
+ * g1a_events -> l'historique reste exact même pour les vieux événements et
  * coherent avec les classements.
  */
 export async function getFinishedEventHistory() {

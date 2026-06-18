@@ -64,7 +64,7 @@ export async function PATCH(
         await stopBridgeEvent(event.id);
       } catch (error) {
         bridgeWarning =
-          error instanceof Error ? error.message : "Passerelle locale non arretee.";
+          error instanceof Error ? error.message : "Passerelle locale non arrêtée.";
       }
     }
 

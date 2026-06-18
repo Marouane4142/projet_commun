@@ -156,7 +156,7 @@ export async function searchTeams(input?: {
       true,
       teams,
       search,
-      payload.plan?.message ?? (teams.length > 0 ? null : "Aucune equipe trouvee."),
+      payload.plan?.message ?? (teams.length > 0 ? null : "Aucune équipe trouvée."),
     );
   } catch (error) {
     return buildTeamsResponse(
@@ -183,7 +183,7 @@ export async function listTeamMatches(input?: {
       configured: config.configured,
       provider: "highlightly.net",
       matches: [] as MatchOption[],
-      message: "Selectionne une equipe pour charger ses matchs.",
+      message: "Sélectionne une équipe pour charger ses matchs.",
     };
   }
 
@@ -237,7 +237,7 @@ export async function listTeamMatches(input?: {
       teamId,
       teamName,
       matches,
-      message: matches.length > 0 ? null : "Aucun futur match trouve pour cette equipe.",
+      message: matches.length > 0 ? null : "Aucun futur match trouvé pour cette équipe.",
     };
   } catch (error) {
     return {
@@ -264,7 +264,7 @@ export async function getCurrentMatch(matchId?: string | null): Promise<MatchSna
   }
 
   if (!config.configured) {
-    return cached?.match ?? getNoSelectedMatch("Cle Highlightly manquante.");
+    return cached?.match ?? getNoSelectedMatch("Clé Highlightly manquante.");
   }
 
   try {
@@ -373,7 +373,7 @@ function isHighlightlyMatch(payload: unknown): payload is HighlightlyMatch {
 function normalizeTeam(team: HighlightlyTeam): TeamOption {
   return {
     id: String(team.id ?? ""),
-    name: team.name ?? "Equipe inconnue",
+    name: team.name ?? "Équipe inconnue",
     type: team.type,
     logo: team.logo,
   };
@@ -507,14 +507,14 @@ function buildTeamsResponse(
   };
 }
 
-function getNoSelectedMatch(message = "Aucun match selectionne.") {
+function getNoSelectedMatch(message = "Aucun match sélectionné.") {
   const now = new Date().toISOString();
 
   return {
     id: 0,
     competition: message,
     homeTeam: "Match",
-    awayTeam: "non selectionne",
+    awayTeam: "non sélectionné",
     homeScore: 0,
     awayScore: 0,
     status: "scheduled",

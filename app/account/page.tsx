@@ -25,7 +25,7 @@ export default async function AccountPage() {
       })
     : "-";
 
-  // Stats d'alcoolemie personnelles (si un gerant a lie ce compte a un sujet).
+  // Stats d'alcoolémie personnelles (si un gérant a lié ce compte à un sujet).
   const myAlcoholStats = await getPersonalAlcoholStats(user.id);
 
   return (
@@ -40,7 +40,7 @@ export default async function AccountPage() {
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-300">
               <span className="flex items-center gap-1.5">
                 <UserRound size={14} />
-                {role === "gerant" ? "Gerant du bar" : "Supporter"}
+                {role === "gerant" ? "Gérant du bar" : "Supporter"}
               </span>
               <span className="flex items-center gap-1.5">
                 <Mail size={14} />
@@ -62,7 +62,7 @@ export default async function AccountPage() {
         role={role}
       />
 
-      {/* Stats d'alcoolemie personnelles */}
+      {/* Stats d'alcoolémie personnelles */}
       {myAlcoholStats.length > 0 && (
         <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-6">
           <h2 className="flex items-center gap-2 text-lg font-black">

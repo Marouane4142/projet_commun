@@ -18,7 +18,7 @@ export default async function AlcoholPage() {
   const gerant = isGerant(user);
 
   // Utilisateur non-gerant : on verifie s'il a des sujets lies.
-  // S'il n'en a pas, il n'a pas acces a la page.
+  // S'il n'en a pas, il n'a pas accès à la page.
   if (!gerant) {
     const myStats = await getPersonalAlcoholStats(user.id);
     if (myStats.length === 0) redirect("/account");

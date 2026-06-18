@@ -198,23 +198,30 @@ with check (
   )
 );
 
--- Nettoyage d'anciens seeds (videos non disponibles / non integrables en France).
+-- Nettoyage d'anciens seeds (vidéos non disponibles, non intégrables ou non officielles).
 delete from public.g1a_broadcasts
 where youtube_id in (
   'SlmYDbzHqjg', 'Wbal5ZuGeI8', 'MM5hUuEzH3g', 'gQOgcN7_IZE', '7DLR9gCjXHk', '7cFSYqlo-2w',
-  'obVK3tuUXgs', 'eVPNdLv1ugQ', 'q3ppzcwriGE', 'F38RMQltGP0', '3Q8JGYb50MY', 'kjcC5ia95_Y'
+  'obVK3tuUXgs', 'eVPNdLv1ugQ', 'q3ppzcwriGE', 'F38RMQltGP0', '3Q8JGYb50MY', 'kjcC5ia95_Y',
+  'rVfGFqQ3WjE', '8pCqYi7FGBQ', 'Q9wdT5Y4E-c', 'x_nDqWbL0gI', 'J9bFMSEvt1c', 'UmHwkXCCrFY',
+  'gdaCaPqp0D4', 't2HIDkYd3cw', 'cupn9ARPukA', '8I2s_hs4TUU', 'CZ2CdOyXSho',
+  'qx7idI5vIgk', 'FFsVEBS-4B0', 'Ehjl6X3gHxo', 'eGsj5v9qq1Q', 'f1YgFG4DKk4', 'BxTp78Jvlaw'
 );
 
--- Seed : resumes Coupe du Monde 2026 (chaines francaises).
+-- Seed : highlights officiels FIFA de matchs Coupe du Monde 2026.
 insert into public.g1a_broadcasts (title, youtube_id, match_label, kind, published_at)
 values
-  ('France 3-1 Senegal - Resume et buts', 'gdaCaPqp0D4', 'France vs Senegal', 'resume', '2026-06-16T21:00:00Z'),
-  ('France - Senegal - Resume et buts', 't2HIDkYd3cw', 'France vs Senegal', 'resume', '2026-06-16T20:30:00Z'),
-  ('Pays-Bas - Japon - Resume', 'cupn9ARPukA', 'Pays-Bas vs Japon', 'resume', '2026-06-15T18:00:00Z'),
-  ('Tous les buts des Bleus (eliminatoires)', 'LhPR2Gi-9xQ', 'Equipe de France', 'best', '2026-06-10T12:00:00Z'),
-  ('France vs Senegal 3-1 - Resume', '8I2s_hs4TUU', 'France vs Senegal', 'resume', '2026-06-16T20:00:00Z'),
-  ('France 3-1 Senegal - En direct du resume', 'CZ2CdOyXSho', 'France vs Senegal', 'resume', '2026-06-16T19:30:00Z')
-on conflict (youtube_id) do nothing;
+  ('Highlights | France 3-1 Senegal | FIFA World Cup 2026', 'n3JDGlOwMJ4', 'France vs Senegal', 'resume', '2026-06-16T21:00:00Z'),
+  ('Highlights | Belgium 1-1 Egypt | FIFA World Cup 2026', 'i8sD2Aea9_M', 'Belgium vs Egypt', 'resume', '2026-06-15T21:00:00Z'),
+  ('Highlights | Austria 3-1 Jordan | FIFA World Cup 2026', 'pU-mPZcuENY', 'Austria vs Jordan', 'resume', '2026-06-17T21:00:00Z'),
+  ('Highlights | Qatar 1-1 Switzerland | FIFA World Cup 2026', 'KVz43-eddIQ', 'Qatar vs Switzerland', 'resume', '2026-06-13T21:00:00Z'),
+  ('Highlights | Spain 0-0 Cabo Verde | FIFA World Cup 2026', 'W9Z4ER9oX0k', 'Spain vs Cabo Verde', 'resume', '2026-06-13T20:00:00Z'),
+  ('Highlights | Saudi Arabia 1-1 Uruguay | FIFA World Cup 2026', 'XrDExPcLCXY', 'Saudi Arabia vs Uruguay', 'resume', '2026-06-14T21:00:00Z')
+on conflict (youtube_id) do update
+  set title = excluded.title,
+      match_label = excluded.match_label,
+      kind = excluded.kind,
+      published_at = excluded.published_at;
 
 -- ----------------------------------------------------------------------------
 -- 5) Alias des sujets ethylotest : un gerant peut renommer "Personne 3" en

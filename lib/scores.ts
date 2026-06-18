@@ -123,23 +123,23 @@ export function generateRecommendations(zone: BarZone, latest: LatestMetrics) {
   }
 
   if (db > 90) {
-    recommendations.push(`Ambiance tres forte en ${zone.name}.`);
+    recommendations.push(`Ambiance très forte en ${zone.name}.`);
   }
 
   if (smoke > 0) {
-    recommendations.push(`Aerer ${zone.name}.`);
+    recommendations.push(`Aérer ${zone.name}.`);
   }
 
   if (gas > 350) {
-    recommendations.push(`Surveiller la qualite de l'air en ${zone.name}.`);
+    recommendations.push(`Surveiller la qualité de l'air en ${zone.name}.`);
   }
 
   if (people > zone.maxCapacity) {
-    recommendations.push(`Limiter les nouvelles entrees en ${zone.name}.`);
+    recommendations.push(`Limiter les nouvelles entrées en ${zone.name}.`);
   }
 
   if (!hasAnyMetric) {
-    recommendations.push(`En attente de donnees capteurs reelles pour ${zone.name}.`);
+    recommendations.push(`En attente de données capteurs réelles pour ${zone.name}.`);
   } else if (recommendations.length === 0) {
     recommendations.push(`${zone.name} reste confortable pour le moment.`);
   }
@@ -180,9 +180,9 @@ export function generateAlerts(zone: BarZone, latest: LatestMetrics): Alert[] {
 }
 
 function buildAlertMessage(zoneName: string, reading: SensorReading) {
-  if (reading.type === "decibel") return `Niveau sonore eleve en ${zoneName}.`;
-  if (reading.type === "temperature") return `Temperature elevee en ${zoneName}.`;
-  if (reading.type === "smoke") return `Fumee detectee en ${zoneName}.`;
-  if (reading.type === "gas") return `Gaz eleve en ${zoneName}.`;
-  return `Affluence elevee en ${zoneName}.`;
+  if (reading.type === "decibel") return `Niveau sonore élevé en ${zoneName}.`;
+  if (reading.type === "temperature") return `Température élevée en ${zoneName}.`;
+  if (reading.type === "smoke") return `Fumée détectée en ${zoneName}.`;
+  if (reading.type === "gas") return `Gaz élevé en ${zoneName}.`;
+  return `Affluence élevée en ${zoneName}.`;
 }

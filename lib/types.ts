@@ -137,7 +137,7 @@ export type EventZoneAssignment = {
 };
 
 export type EventStats = {
-  avgSound: number | null; // dB moyen sur la duree de l'evenement (toutes zones)
+  avgSound: number | null; // dB moyen sur la durée de l'événement (toutes zones)
   zoneASound: number | null; // dB moyen zone A
   zoneBSound: number | null; // dB moyen zone B
   avgTemperature: number | null; // C moyen
@@ -199,7 +199,7 @@ export type Alert = {
 export type LatestMetrics = Partial<Record<MetricType, SensorReading>>;
 
 // ---------------------------------------------------------------------------
-// Ecosysteme multi-groupes : donnees agregees depuis les tables de TOUS les
+// Écosystème multi-groupes : données agrégées depuis les tables de TOUS les
 // groupes de la salle (BDD Supabase partagee). Lecture seule cross-groupes.
 // ---------------------------------------------------------------------------
 export type EcoSourceStatus = "live" | "waiting" | "error";
@@ -242,7 +242,7 @@ export type AlcoholInsights = {
   max: number | null;
   average: number | null;
   // Moyenne des derniers tests par personne dans l'heure precedant le dernier
-  // test global : reflete l'alcoolemie de la foule presente en ce moment.
+  // test global : reflète l'alcoolémie de la foule présente en ce moment.
   recentAverage: number | null;
   recentCount: number;
   overLimit: number; // sujets au-dessus de la limite legale

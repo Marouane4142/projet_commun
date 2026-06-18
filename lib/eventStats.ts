@@ -98,7 +98,7 @@ export async function computeEventStats(
 
     const alcoholVals = (alcohol.data ?? []).map((r: any) => r.alcohol_level as number);
 
-    // Pic d'affluence : valeurs pendant l'evenement + occupation au coup d'envoi.
+    // Pic d'affluence : valeurs pendant l'événement + occupation au coup d'envoi.
     const affRows = (affluence.data ?? []) as { nb_personnes: number; created_at: string }[];
     const during = affRows.filter((r) => r.created_at >= startLocal && r.created_at <= endLocal);
     const beforeStart = affRows.find((r) => r.created_at < startLocal); // le plus recent avant

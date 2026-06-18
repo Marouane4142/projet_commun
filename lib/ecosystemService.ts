@@ -58,7 +58,7 @@ function statusFromValue(value: number | null, type: "decibel" | "smoke" | "temp
 // --------------------------------------------------------------------------
 // G1A - son
 // --------------------------------------------------------------------------
-// Fenetre pendant laquelle une carte est consideree "presente / detectee".
+// Fenêtre pendant laquelle une carte est considérée "présente / détectée".
 const SOUND_ACTIVE_WINDOW_MS = 12_000;
 
 async function buildSoundDomain(client: any): Promise<EcoDomain> {
@@ -73,7 +73,7 @@ async function buildSoundDomain(client: any): Promise<EcoDomain> {
     (q) => q.order("measured_at", { ascending: false }).limit(120),
   );
 
-  // Ambiance generale = derniere valeur de la PLUS PETITE carte detectee
+  // Ambiance générale = dernière valeur de la PLUS PETITE carte détectée
   // recemment (carte 1 prioritaire ; sinon 2, puis 3...). Si la carte 1
   // revient, elle reprend la main automatiquement.
   const newest = rows[0] ? new Date(rows[0].measured_at).getTime() : 0;
@@ -281,7 +281,7 @@ function buildAlcohol(data: Awaited<ReturnType<typeof fetchAlcohol>>): {
 // --------------------------------------------------------------------------
 type EnvRow = { created_at: string; value: number; type: string; unit: string | null };
 
-// Attention : la table G1E utilise un identifiant en MAJUSCULES (sensible a la
+// Attention : la table G1E utilise un identifiant en MAJUSCULES (sensible à la
 // casse cote PostgREST), d'ou "G1E_measurements" et non "g1e_measurements".
 const G1E_TABLE = "G1E_measurements";
 

@@ -53,7 +53,7 @@ export function UserMenu({ pseudo, role, authenticated }: Props) {
         <span className="max-w-28 truncate">{pseudo ?? "Mon compte"}</span>
         {role === "gerant" && (
           <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-black uppercase text-amber-200">
-            gerant
+            gérant
           </span>
         )}
       </Link>

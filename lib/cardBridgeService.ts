@@ -45,7 +45,7 @@ export async function assertCardsAvailable(cardIds: number[]) {
   const uniqueCardIds = [...new Set(cardIds)];
 
   if (uniqueCardIds.length !== cardIds.length) {
-    throw new Error("Chaque equipe doit avoir une carte differente.");
+    throw new Error("Chaque équipe doit avoir une carte différente.");
   }
 
   const status = await getBridgeStatus();

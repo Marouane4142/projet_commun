@@ -9,7 +9,7 @@ export const metadata = { title: "Diffusion - FanBar Arena" };
 export const dynamic = "force-dynamic";
 
 const KIND_LABEL: Record<Broadcast["kind"], string> = {
-  resume: "Resume",
+  resume: "Résumé",
   live: "Live",
   best: "Best of",
 };

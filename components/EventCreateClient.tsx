@@ -250,7 +250,7 @@ export function EventCreateClient() {
               value={eventName}
               onChange={(event) => setEventName(event.target.value)}
               className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none focus:border-cyan-300/50"
-              placeholder="France vs Senegal - Soiree FanBar"
+              placeholder="France vs Sénégal - Soirée FanBar"
             />
           </label>
 

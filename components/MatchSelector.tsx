@@ -173,7 +173,7 @@ export function MatchSelector({
               value={teamSearch}
               onChange={(event) => setTeamSearch(event.target.value)}
               className="min-w-0 flex-1 bg-transparent py-3 text-white outline-none"
-              placeholder="France, Senegal, Irak..."
+              placeholder="France, Sénégal, Irak..."
             />
           </span>
         </label>
@@ -234,7 +234,7 @@ export function MatchSelector({
 
             {!teamsLoading && teamsPayload?.teams.length === 0 ? (
               <p className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-400">
-                Aucune equipe pour cette recherche.
+                Aucune équipe pour cette recherche.
               </p>
             ) : null}
           </div>
@@ -251,7 +251,7 @@ export function MatchSelector({
           <div className="mt-3 grid gap-2">
             {!selectedTeam ? (
               <p className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-400">
-                Choisis une equipe pour afficher ses prochains matchs.
+                Choisis une équipe pour afficher ses prochains matchs.
               </p>
             ) : null}
 
@@ -280,7 +280,7 @@ export function MatchSelector({
 
             {!matchesLoading && selectedTeam && matchesPayload?.matches.length === 0 ? (
               <p className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-400">
-                Aucun futur match disponible pour cette equipe.
+                Aucun futur match disponible pour cette équipe.
               </p>
             ) : null}
           </div>

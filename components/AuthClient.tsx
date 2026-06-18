@@ -19,9 +19,10 @@ export function AuthClient({ mode }: { mode: Mode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function ensureProfile(userId: string, fallbackPseudo: string) {
-    // upsert idempotent : cree le profil si absent (RLS : insert/update self)
+    // Upsert idempotent : crée le profil si absent (RLS : insert/update self).
     await supabase
       .from("g1a_profiles")
       .upsert(
@@ -33,6 +34,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setLoading(true);
 
     try {
@@ -41,28 +43,24 @@ export function AuthClient({ mode }: { mode: Mode }) {
         if (cleanPseudo.length < 2) {
           throw new Error("Choisis un pseudo d'au moins 2 caractères.");
         }
+
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { data: { pseudo: cleanPseudo } },
+          options: {
+            data: { pseudo: cleanPseudo },
+            emailRedirectTo:
+              typeof window === "undefined" ? undefined : `${window.location.origin}/login`,
+          },
         });
         if (signUpError) throw signUpError;
 
-        const userId = data.user?.id;
-        if (userId && data.session) {
-          await ensureProfile(userId, cleanPseudo);
-        } else if (userId && !data.session) {
-          // Confirmation email activee : on tente une connexion directe.
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-          });
-          if (signInError) {
-            throw new Error(
-              "Compte créé. Confirme ton email puis connecte-toi.",
-            );
-          }
-          await ensureProfile(userId, cleanPseudo);
+        if (data.user && data.session) {
+          await ensureProfile(data.user.id, cleanPseudo);
+        } else {
+          setNotice("Compte créé. Vérifie ton email, puis connecte-toi.");
+          setPassword("");
+          return;
         }
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -173,6 +171,15 @@ export function AuthClient({ mode }: { mode: Mode }) {
             </p>
           )}
 
+          {notice && (
+            <p
+              role="status"
+              className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200"
+            >
+              {notice}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -191,7 +198,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
 
         <div className="mt-5 flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-400">
           <ShieldCheck size={15} className="text-emerald-300" />
-          Connexion securisee. Mots de passe chiffres, jamais stockes en clair.
+          Connexion sécurisée. Mots de passe chiffrés, jamais stockés en clair.
         </div>
 
         <p className="mt-5 text-center text-sm text-slate-400">
@@ -260,5 +267,7 @@ function translateError(message: string): string {
     return "Mot de passe trop court (6 caractères minimum).";
   if (m.includes("unable to validate email") || m.includes("invalid email"))
     return "Email invalide.";
+  if (m.includes("error sending confirmation email"))
+    return "Supabase n'a pas pu envoyer l'email de confirmation. Vérifie la configuration Auth / SMTP dans Supabase.";
   return message;
 }

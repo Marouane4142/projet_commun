@@ -55,6 +55,8 @@ Les tables sont créées via des fichiers SQL à exécuter **une seule fois** da
 | 4 | [`sql/supabase-crossgroup-read.sql`](sql/supabase-crossgroup-read.sql) | RLS lecture `g1d_mq3_measurements`, `G1E_measurements` |
 | 5 | [`sql/supabase-alcohol-links.sql`](sql/supabase-alcohol-links.sql) | `g1a_subject_aliases`, `g1a_subject_links` |
 
+Pour remplacer uniquement les diffusions vidéo par les highlights officiels FIFA World Cup 2026, exécuter [`sql/seed-broadcasts-worldcup-2026.sql`](sql/seed-broadcasts-worldcup-2026.sql).
+
 ## Le réseau de capteurs
 
 | Groupe | Table Supabase | Donnée exploitée |
@@ -70,6 +72,7 @@ Les domaines sans données passent en « en attente » et s'activent dès que le
 ## Comptes et rôles
 
 - **Inscription / connexion** via Supabase Auth (mot de passe chiffré, jamais stocké en clair)
+- **Confirmation email** : si elle est activée dans Supabase Auth, Supabase envoie le mail et le site affiche l'état de confirmation
 - **Deux rôles** : `client` (supporter, par défaut) et `gerant` (administrateur du bar)
 - **Promotion** : seul un gérant existant peut promouvoir un autre compte via la page `/account` — fonction `SECURITY DEFINER` anti-escalade de privilège
 - **Bootstrap** : le premier gérant est désigné manuellement via `sql/supabase-g1a-auth.sql` (section 2.bis)

@@ -44,7 +44,7 @@ export function BroadcastManager() {
     setUrl("");
     setTitle("");
     setMatchLabel("");
-    setMsg("Diffusion ajoutee !");
+    setMsg("Diffusion ajoutée !");
     router.refresh();
   }
 
@@ -66,7 +66,7 @@ export function BroadcastManager() {
       className="rounded-2xl border border-emerald-400/30 bg-emerald-400/5 p-5"
     >
       <h3 className="text-sm font-black uppercase text-emerald-200">
-        Ajouter une diffusion (gerant)
+        Ajouter une diffusion (gérant)
       </h3>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="grid gap-1 sm:col-span-2">
@@ -91,7 +91,7 @@ export function BroadcastManager() {
           <input
             value={matchLabel}
             onChange={(e) => setMatchLabel(e.target.value)}
-            placeholder="France vs Senegal"
+            placeholder="France vs Sénégal"
             className="min-h-10 rounded-lg border border-white/10 bg-black/30 px-3 text-sm outline-none focus:border-emerald-400/70"
           />
         </label>
@@ -102,7 +102,7 @@ export function BroadcastManager() {
             onChange={(e) => setKind(e.target.value as "resume" | "live" | "best")}
             className="min-h-10 rounded-lg border border-white/10 bg-black/30 px-3 text-sm outline-none focus:border-emerald-400/70"
           >
-            <option value="resume">Resume</option>
+            <option value="resume">Résumé</option>
             <option value="live">Live</option>
             <option value="best">Best of</option>
           </select>

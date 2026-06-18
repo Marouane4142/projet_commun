@@ -62,8 +62,8 @@ export async function getDashboardData(input?: {
   ]);
   const readings = event ? keepReadingsAfter(allReadings, event.createdAt) : allReadings;
 
-  // Le duel des zones se joue uniquement sur le son. Le reste de l'ecosysteme
-  // (affluence, air, alcool, climat) est affiche par <EcosystemLive/>, qui
+  // Le duel des zones se joue uniquement sur le son. Le reste de l'écosystème
+  // (affluence, air, alcool, climat) est affiché par <EcosystemLive/>, qui
   // interroge /api/ecosystem directement : pas besoin de le recalculer ici.
   const zoneScores = eventZones.map((zone) => buildZoneScore(zone, readings));
   const winner = zoneScores.reduce<ZoneScore | null>((current, zone) => {
@@ -164,15 +164,15 @@ function buildGlobalSummary(zonesData: ZoneScore[]) {
 
   const [zoneA, zoneB] = zonesData;
   if (zoneA.ambianceScore === null && zoneB.ambianceScore === null) {
-    return "En attente de donnees sonores reelles.";
+    return "En attente de données sonores réelles.";
   }
 
-  if (zoneA.ambianceScore === null) return `${zoneB.zone.name} est la seule zone avec donnees live.`;
-  if (zoneB.ambianceScore === null) return `${zoneA.zone.name} est la seule zone avec donnees live.`;
+  if (zoneA.ambianceScore === null) return `${zoneB.zone.name} est la seule zone avec données live.`;
+  if (zoneB.ambianceScore === null) return `${zoneA.zone.name} est la seule zone avec données live.`;
 
   const diff = Math.abs(zoneA.ambianceScore - zoneB.ambianceScore);
 
-  if (diff < 8) return "Ambiance equilibree entre les deux camps.";
+  if (diff < 8) return "Ambiance équilibrée entre les deux camps.";
 
   const winner = zoneA.ambianceScore > zoneB.ambianceScore ? zoneA : zoneB;
   return `${winner.zone.name} domine l'ambiance pour le moment.`;

@@ -143,8 +143,8 @@ function emptyReport(generatedAt: string): AlcoholReport {
 }
 
 /**
- * Stats d'alcoolemie personnelles : renvoie uniquement les donnees des sujets
- * lies au compte utilisateur donne (via la table g1a_subject_links).
+ * Stats d'alcoolémie personnelles : renvoie uniquement les données des sujets
+ * liés au compte utilisateur donné (via la table g1a_subject_links).
  */
 export async function getPersonalAlcoholStats(
   userId: string,

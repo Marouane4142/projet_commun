@@ -62,14 +62,14 @@ export async function POST(request: NextRequest) {
 
   if (!zoneACardId || !zoneBCardId) {
     return NextResponse.json(
-      { error: "Les cartes doivent contenir un id numerique." },
+      { error: "Les cartes doivent contenir un id numérique." },
       { status: 400 },
     );
   }
 
   if (zoneACardId === zoneBCardId) {
     return NextResponse.json(
-      { error: "Chaque zone doit utiliser une carte differente." },
+      { error: "Chaque zone doit utiliser une carte différente." },
       { status: 400 },
     );
   }
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
             error:
               bridgeError instanceof Error
                 ? bridgeError.message
-                : "Une carte ne repond pas a la passerelle.",
+                : "Une carte ne répond pas à la passerelle.",
           },
           { status: 409 },
         );

@@ -90,8 +90,8 @@ export async function getEventById(id?: string | null) {
 export async function createEvent(input: CreateEventInput) {
   const supabase = anonSensorClient();
 
-  // Anti-doublon : un match deja utilise (evenement en cours ou termine dans
-  // l'historique) ne peut pas etre reprogramme.
+  // Anti-doublon : un match déjà utilisé (événement en cours ou terminé dans
+  // l'historique) ne peut pas être reprogrammé.
   const { data: existing } = await supabase
     .from(tableName)
     .select("id, status")
@@ -155,7 +155,7 @@ export async function updateEventStatus(input: {
     payload.final_home_score = input.finalHomeScore ?? null;
     payload.final_away_score = input.finalAwayScore ?? null;
 
-    // Capture des statistiques sur toute la duree de l'evenement (classements).
+    // Capture des statistiques sur toute la durée de l'événement (classements).
     const existing = await getEventById(input.id);
     if (existing) {
       const cardA = parseCardId(existing.zoneA.card) ?? null;
@@ -190,7 +190,7 @@ export function eventToZones(event: FanEvent | null) {
     {
       id: 1,
       name: event?.zoneA.label ?? "Zone A",
-      supporterTeam: event?.zoneA.team ?? "Equipe A",
+      supporterTeam: event?.zoneA.team ?? "Équipe A",
       color: event?.zoneA.color ?? "#2563eb",
       maxCapacity: 80,
       card: event?.zoneA.card,
@@ -199,7 +199,7 @@ export function eventToZones(event: FanEvent | null) {
     {
       id: 2,
       name: event?.zoneB.label ?? "Zone B",
-      supporterTeam: event?.zoneB.team ?? "Equipe B",
+      supporterTeam: event?.zoneB.team ?? "Équipe B",
       color: event?.zoneB.color ?? "#facc15",
       maxCapacity: 80,
       card: event?.zoneB.card,

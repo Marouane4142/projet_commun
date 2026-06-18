@@ -150,7 +150,7 @@ function EventPredictionCard({
     { home: 0, away: 0, draw: 0 },
   );
 
-  // Les pronostics ferment 15 min apres le COUP D'ENVOI du match (pas de l'evenement).
+  // Les pronostics ferment 15 min après le COUP D'ENVOI du match (pas de l'événement).
   const kickoff = new Date(event.kickoffAt).getTime();
   const closeAt = kickoff + 15 * 60_000;
   const now = Date.now();
