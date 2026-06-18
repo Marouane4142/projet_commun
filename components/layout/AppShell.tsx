@@ -52,7 +52,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         <main id="main-content" className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
-          <header className="sticky top-0 z-40 mb-6 flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 backdrop-blur">
+          <header className="sticky top-2 z-40 mb-6 flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/80 px-4 py-3 backdrop-blur">
             <Link href="/" className="flex items-center gap-2 font-black xl:hidden">
               <span className="grid h-8 w-8 place-items-center rounded-md bg-emerald-400 text-slate-950">
                 <Trophy size={16} />

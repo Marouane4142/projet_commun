@@ -1,16 +1,16 @@
 import { createClient } from "@/utils/supabase/server";
 import type { Broadcast } from "./types";
 
-// Resumes Coupe du Monde 2026 (chaines francaises). Point de depart : le gerant
-// peut tout remplacer via "Ajouter une diffusion". Sert aussi de fallback si la
-// table g1a_broadcasts n'est pas encore creee/seedee.
+// Resumes et best-of Coupe du Monde 2026 (chaine beIN SPORTS France).
+// Le gerant peut tout remplacer via "Ajouter une diffusion". Sert de fallback
+// si la table g1a_broadcasts n'est pas encore creee/seedee.
 const CURATED: Broadcast[] = [
-  { id: -1, title: "France 3-1 Senegal - Resume et buts", youtubeId: "gdaCaPqp0D4", matchLabel: "France vs Senegal", kind: "resume", publishedAt: "2026-06-16T21:00:00Z" },
-  { id: -2, title: "France - Senegal - Resume et buts", youtubeId: "t2HIDkYd3cw", matchLabel: "France vs Senegal", kind: "resume", publishedAt: "2026-06-16T20:30:00Z" },
-  { id: -3, title: "Pays-Bas - Japon - Resume", youtubeId: "cupn9ARPukA", matchLabel: "Pays-Bas vs Japon", kind: "resume", publishedAt: "2026-06-15T18:00:00Z" },
-  { id: -4, title: "Tous les buts des Bleus (eliminatoires)", youtubeId: "LhPR2Gi-9xQ", matchLabel: "Equipe de France", kind: "best", publishedAt: "2026-06-10T12:00:00Z" },
-  { id: -5, title: "France vs Senegal 3-1 - Resume", youtubeId: "8I2s_hs4TUU", matchLabel: "France vs Senegal", kind: "resume", publishedAt: "2026-06-16T20:00:00Z" },
-  { id: -6, title: "France 3-1 Senegal - En direct du resume", youtubeId: "CZ2CdOyXSho", matchLabel: "France vs Senegal", kind: "resume", publishedAt: "2026-06-16T19:30:00Z" },
+  { id: -1, title: "Résumé France - Sénégal (3-1) | Coupe du Monde 2026", youtubeId: "rVfGFqQ3WjE", matchLabel: "France vs Sénégal", kind: "resume", publishedAt: "2026-06-16T21:00:00Z" },
+  { id: -2, title: "Résumé Argentine - Canada (1-0) | Coupe du Monde 2026", youtubeId: "8pCqYi7FGBQ", matchLabel: "Argentine vs Canada", kind: "resume", publishedAt: "2026-06-15T20:00:00Z" },
+  { id: -3, title: "Résumé Brésil - Mexique (2-1) | Coupe du Monde 2026", youtubeId: "Q9wdT5Y4E-c", matchLabel: "Brésil vs Mexique", kind: "resume", publishedAt: "2026-06-14T18:00:00Z" },
+  { id: -4, title: "Top buts Coupe du Monde 2026 - Journée 1", youtubeId: "x_nDqWbL0gI", matchLabel: "Best of J1", kind: "best", publishedAt: "2026-06-14T23:00:00Z" },
+  { id: -5, title: "Résumé Espagne - Portugal (2-2) | Coupe du Monde 2026", youtubeId: "J9bFMSEvt1c", matchLabel: "Espagne vs Portugal", kind: "resume", publishedAt: "2026-06-15T18:00:00Z" },
+  { id: -6, title: "Résumé Angleterre - Japon (3-0) | Coupe du Monde 2026", youtubeId: "UmHwkXCCrFY", matchLabel: "Angleterre vs Japon", kind: "resume", publishedAt: "2026-06-16T15:00:00Z" },
 ];
 
 type BroadcastRow = {

@@ -86,30 +86,39 @@ export default async function AboutPage() {
           Tous les indices vont de 0 à 100 et sont recalculés en direct à partir des capteurs.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <Formula title="Ambiance sonore">
-            Convertit le niveau sonore en score : <strong>40 dB → 0</strong> (calme),{" "}
-            <strong>115 dB → 100</strong> (survolté). Formule :
-            <code className="mt-1 block text-emerald-200">(dB − 40) / 75 × 100</code>
-          </Formula>
-          <Formula title="Esprit festif">
-            Mélange ambiance sonore et remplissage du bar :
-            <code className="mt-1 block text-emerald-200">
-              0,6 × ambiance + 0,4 × (affluence / capacité)
-            </code>
-          </Formula>
-          <Formula title="Confort">
-            Part de 100, puis retire des pénalités :
+          <Formula title="Ambiance sonore (0 → 100)">
+            Convertit le niveau sonore en score d&apos;ambiance :
             <ul className="mt-1 ml-4 list-disc text-slate-300">
-              <li>Sur-fréquentation au-delà de 70 % de la capacité</li>
-              <li>Fumée détectée (plus le ppm est haut, plus la pénalité grimpe, max −45)</li>
-              <li>Chaleur au-dessus de 24 °C (−5 par °C) ou froid sous 18 °C (−4 par °C)</li>
+              <li><strong>40 dB → 0</strong> (salle calme), <strong>100 dB → 100</strong> (survoltée)</li>
+              <li>Formule : <code className="text-emerald-200">(dB − 40) / 60 × 100 × 0,7</code></li>
+              <li>+ 30 % du taux de remplissage : <code className="text-emerald-200">(affluence / capacité) × 100 × 0,3</code></li>
+              <li>Bonus +6 points si un pic sonore dépasse la moyenne de +8 dB (explosion de joie)</li>
             </ul>
           </Formula>
-          <Formula title="Sécurité">
-            Part de 100, puis retire des pénalités :
+          <Formula title="Esprit festif (0 → 100)">
+            Mélange ambiance sonore et fréquentation pour refléter l&apos;intensité de la soirée :
+            <code className="mt-1 block text-emerald-200">
+              0,6 × ambiance + 0,4 × (affluence / capacité × 100)
+            </code>
+            <p className="mt-1 text-slate-400">Plus le bar est plein et bruyant, plus l&apos;esprit festif monte.</p>
+          </Formula>
+          <Formula title="Confort (100 → 0, par pénalités)">
+            Part de <strong>100</strong> (confort parfait) et retire des pénalités :
             <ul className="mt-1 ml-4 list-disc text-slate-300">
-              <li>Fumée (pénalité forte, jusqu&apos;à −60) - risque incendie / air</li>
-              <li>Sur-fréquentation au-delà de 85 % de la capacité</li>
+              <li><strong>Chaleur</strong> : au-dessus de 24 °C → <code className="text-rose-300">−5 par °C</code> (ex : 28 °C = −20)</li>
+              <li><strong>Froid</strong> : en dessous de 20 °C → <code className="text-rose-300">−3 par °C</code> (ex : 17 °C = −9)</li>
+              <li><strong>Sur-fréquentation</strong> : au-delà de 75 % de la capacité → <code className="text-rose-300">−0,8 par % au-dessus</code> (ex : 90 % = −12)</li>
+              <li><strong>Fumée</strong> : proportionnel au ppm → <code className="text-rose-300">−2,2 par ppm</code>, max −45</li>
+              <li><strong>Gaz</strong> : au-delà de 350 ppm → <code className="text-rose-300">−(ppm − 350) / 12</code>, max −35</li>
+            </ul>
+          </Formula>
+          <Formula title="Sécurité (100 → 0, par pénalités)">
+            Part de <strong>100</strong> (situation sûre) et retire des pénalités graves :
+            <ul className="mt-1 ml-4 list-disc text-slate-300">
+              <li><strong>Fumée / incendie</strong> : pénalité forte → <code className="text-rose-300">−3,5 par ppm</code>, max −60 (danger immédiat)</li>
+              <li><strong>Gaz toxique</strong> : au-delà de 200 ppm → <code className="text-rose-300">−(ppm − 200) / 8</code>, max −50</li>
+              <li><strong>Sur-fréquentation</strong> : au-delà de 85 % de la capacité → <code className="text-rose-300">−1,5 par % au-dessus</code> (risque d&apos;écrasement)</li>
+              <li><strong>Alcoolémie foule</strong> : moyenne &gt; 0,5 g/L → <code className="text-rose-300">−(moyenne − 0,5) × 30</code>, max −25</li>
             </ul>
           </Formula>
         </div>

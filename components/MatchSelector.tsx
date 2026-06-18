@@ -164,22 +164,22 @@ export function MatchSelector({
         </button>
       </div>
 
-      <form onSubmit={submitTeamSearch} className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <form onSubmit={submitTeamSearch} className="mt-5 flex items-end gap-3">
         <label className="min-w-0 flex-1 text-sm font-bold text-slate-300">
           Équipe
-          <span className="mt-2 flex min-h-12 items-center rounded-lg border border-white/10 bg-slate-900 px-3 focus-within:border-cyan-300/50">
+          <span className="mt-2 flex min-h-12 items-center gap-2 rounded-lg border border-white/10 bg-slate-900 px-3 focus-within:border-cyan-300/50">
             <Search size={17} className="shrink-0 text-slate-500" />
             <input
               value={teamSearch}
               onChange={(event) => setTeamSearch(event.target.value)}
-              className="min-w-0 flex-1 bg-transparent px-3 py-3 text-white outline-none"
+              className="min-w-0 flex-1 bg-transparent py-3 text-white outline-none"
               placeholder="France, Senegal, Irak..."
             />
           </span>
         </label>
         <button
           type="submit"
-          className="mt-0 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-5 font-black text-slate-950 sm:mt-7"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-5 font-black text-slate-950"
         >
           <Users size={17} />
           Trouver
