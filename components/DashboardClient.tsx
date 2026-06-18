@@ -159,6 +159,7 @@ export function DashboardClient({ gerant = false }: { gerant?: boolean }) {
           message={eventsMessage}
           onRefresh={loadEvents}
           onSelect={selectEvent}
+          gerant={gerant}
         />
 
         {loading ? (
@@ -231,12 +232,14 @@ function EventSelector({
   message,
   onRefresh,
   onSelect,
+  gerant,
 }: {
   events: FanEvent[];
   loading: boolean;
   message: string | null;
   onRefresh: () => void;
   onSelect: (eventId: number) => void;
+  gerant: boolean;
 }) {
   return (
     <article className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
