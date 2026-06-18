@@ -2,7 +2,7 @@ import { Wine } from "lucide-react";
 import { AlcoholClient } from "@/components/AlcoholClient";
 import { getAlcoholReport } from "@/lib/alcoholService";
 import { getCurrentUser, isGerant } from "@/lib/profileService";
-import { createServerClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 
 export const metadata = { title: "Alcoolémie - FanBar Arena" };
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export default async function AlcoholPage() {
   // Charge la liste des profils pour le dropdown de liaison (gerant seulement).
   let profiles: { id: string; pseudo: string }[] = [];
   if (gerant) {
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const { data } = await supabase
       .from("g1a_profiles")
       .select("id, pseudo")
