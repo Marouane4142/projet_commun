@@ -16,7 +16,7 @@ type EventsResponse = {
   message?: string | null;
 };
 
-export function DashboardClient() {
+export function DashboardClient({ gerant = false }: { gerant?: boolean }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [events, setEvents] = useState<FanEvent[]>([]);
   const [eventsMessage, setEventsMessage] = useState<string | null>(null);
@@ -173,23 +173,25 @@ export function DashboardClient() {
   return (
     <div className="space-y-5">
       <section className="relative rounded-lg border border-white/10 bg-slate-950/60 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={changeEvent}
-            className="min-h-10 rounded-lg border border-white/15 bg-white/8 px-4 text-sm font-black text-white"
-          >
-            Changer
-          </button>
-          <button
-            type="button"
-            onClick={() => void finishEvent()}
-            disabled={finishing}
-            className="min-h-10 rounded-lg bg-emerald-400 px-4 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {finishing ? "Finalisation..." : "Terminer"}
-          </button>
-        </div>
+        {gerant && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={changeEvent}
+              className="min-h-10 rounded-lg border border-white/15 bg-white/8 px-4 text-sm font-black text-white"
+            >
+              Changer
+            </button>
+            <button
+              type="button"
+              onClick={() => void finishEvent()}
+              disabled={finishing}
+              className="min-h-10 rounded-lg bg-emerald-400 px-4 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {finishing ? "Finalisation..." : "Terminer"}
+            </button>
+          </div>
+        )}
 
         <div className="mx-auto mt-5 grid max-w-4xl justify-items-center text-center">
           <p className="text-xs font-black uppercase text-cyan-300">{selectedEvent.name}</p>
@@ -252,13 +254,15 @@ function EventSelector({
             <RefreshCw size={17} />
             Recharger
           </button>
-          <Link
-            href="/events/new"
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-400 px-4 font-black text-slate-950"
-          >
-            <CalendarPlus size={17} />
-            Nouvel événement
-          </Link>
+          {gerant && (
+            <Link
+              href="/events/new"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-400 px-4 font-black text-slate-950"
+            >
+              <CalendarPlus size={17} />
+              Nouvel événement
+            </Link>
+          )}
         </div>
       </div>
 

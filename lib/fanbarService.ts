@@ -6,15 +6,13 @@ import {
 } from "./scores";
 import { getCurrentMatch, isMatchInProgress } from "./footballApiService";
 import { eventToZones, getEventById } from "./eventService";
-import { sensors } from "./mockData";
-import { createSupabaseSoundReading, getSupabaseSoundReadings } from "./soundService";
+import { getSupabaseSoundReadings } from "./soundService";
 import type {
   Alert,
   BarZone,
   DashboardData,
   LatestMetrics,
   MetricType,
-  Sensor,
   SensorReading,
   ZoneScore,
 } from "./types";
@@ -49,17 +47,6 @@ function mapReadingsToEventZones(readings: SensorReading[], eventZones: BarZone[
       zoneId: zoneByCard.get(reading.electronicCard) ?? 0,
     };
   });
-}
-
-export async function getSensorsWithLatest(): Promise<Sensor[]> {
-  const readings = await getAllReadings(200);
-
-  return sensors.map((sensor) => ({
-    ...sensor,
-    latestReading: readings.find(
-      (reading) => reading.sensorId === sensor.id || (sensor.id === 2 && reading.source === "supabase"),
-    ),
-  }));
 }
 
 export async function getDashboardData(input?: {
@@ -121,30 +108,6 @@ function keepReadingsAfter(readings: SensorReading[], startValue: string) {
 export async function getActiveAlerts(): Promise<Alert[]> {
   const dashboard = await getDashboardData();
   return dashboard.zones.flatMap((zone) => zone.alerts).filter((alert) => !alert.isResolved);
-}
-
-export async function createReading(input: {
-  sensorId: number;
-  zoneId: number;
-  type: MetricType;
-  value: number;
-  unit?: string;
-  measuredAt?: string;
-  electronicCard?: number;
-}) {
-  const measuredAt = input.measuredAt ?? new Date().toISOString();
-
-  if (input.type === "decibel") {
-    return createSupabaseSoundReading({
-      value: input.value,
-      measuredAt,
-      electronicCard: input.electronicCard ?? input.zoneId,
-    });
-  }
-
-  throw new Error(
-    `La source reelle ${input.type} pour la zone ${input.zoneId} n'est pas encore connectee.`,
-  );
 }
 
 function buildZoneScore(zone: BarZone, readings: SensorReading[]): ZoneScore {

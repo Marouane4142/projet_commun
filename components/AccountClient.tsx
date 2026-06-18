@@ -160,25 +160,6 @@ export function AccountClient({ userId, initialPseudo, initialFavorite, role }: 
             )}
           </div>
         </form>
-
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-          <h2 className="flex items-center gap-2 text-lg font-black">
-            <ShieldCheck size={18} className="text-amber-300" />
-            Rôle
-          </h2>
-          {role === "gerant" ? (
-            <div className="mt-5 rounded-lg border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">
-              Tu es <strong>gérant du bar</strong>. Tu peux créer des événements,
-              régler les seuils, piloter la régie et attribuer le rôle de gérant à
-              d&apos;autres comptes ci-dessous.
-            </div>
-          ) : (
-            <div className="mt-5 rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
-              Tu es <strong>supporter</strong>. Seul le gérant du bar peut
-              attribuer le rôle de gérant. Rapproche-toi de lui si besoin.
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Gestion des roles - gerant uniquement */}
@@ -200,6 +181,9 @@ export function AccountClient({ userId, initialPseudo, initialFavorite, role }: 
             <div className="mt-4 grid gap-2">
               {members.map((m) => {
                 const isGerantMember = m.role === "gerant";
+                const isSelf = m.id === userId;
+                // Un gerant ne peut pas se retirer lui-meme.
+                const canToggle = !(isSelf && isGerantMember);
                 return (
                   <div
                     key={m.id}
@@ -213,29 +197,33 @@ export function AccountClient({ userId, initialPseudo, initialFavorite, role }: 
                         <div className="font-bold">{m.pseudo}</div>
                         <div className="text-xs text-slate-500">
                           {isGerantMember ? "Gérant" : "Supporter"}
-                          {m.id === userId && " · toi"}
+                          {isSelf && " · toi"}
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      disabled={pendingId === m.id}
-                      onClick={() =>
-                        setMemberRole(m, isGerantMember ? "client" : "gerant")
-                      }
-                      className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-bold transition disabled:opacity-60 ${
-                        isGerantMember
-                          ? "border border-white/15 bg-white/[0.05] text-slate-200 hover:bg-white/10"
-                          : "bg-amber-400 text-slate-950 hover:bg-amber-300"
-                      }`}
-                    >
-                      {pendingId === m.id ? (
-                        <Loader2 size={15} className="animate-spin" />
-                      ) : (
-                        <ShieldCheck size={15} />
-                      )}
-                      {isGerantMember ? "Retirer gérant" : "Promouvoir gérant"}
-                    </button>
+                    {canToggle ? (
+                      <button
+                        type="button"
+                        disabled={pendingId === m.id}
+                        onClick={() =>
+                          setMemberRole(m, isGerantMember ? "client" : "gerant")
+                        }
+                        className={`flex min-h-9 items-center gap-2 rounded-lg px-3 text-sm font-bold transition disabled:opacity-60 ${
+                          isGerantMember
+                            ? "border border-white/15 bg-white/[0.05] text-slate-200 hover:bg-white/10"
+                            : "bg-amber-400 text-slate-950 hover:bg-amber-300"
+                        }`}
+                      >
+                        {pendingId === m.id ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <ShieldCheck size={15} />
+                        )}
+                        {isGerantMember ? "Retirer gérant" : "Promouvoir gérant"}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-500">Toi-même</span>
+                    )}
                   </div>
                 );
               })}

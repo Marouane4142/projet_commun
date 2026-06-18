@@ -135,7 +135,6 @@ fanbar-arena/
 │   ├── profileService.ts         # Profils et rôles
 │   └── ...                       # Autres services
 ├── sql/                          # Scripts SQL Supabase (à exécuter une fois)
-├── prisma/                       # Schéma Prisma (documentation, non utilisé en prod)
 ├── utils/supabase/               # Clients Supabase (client, serveur, middleware)
 ├── middleware.ts                  # Middleware Next.js (refresh de session Supabase)
 ├── .env.example                  # Template des variables d'environnement

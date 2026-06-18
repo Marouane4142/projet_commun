@@ -2,7 +2,6 @@
 
 import { LogIn, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
@@ -13,15 +12,19 @@ type Props = {
 };
 
 export function UserMenu({ pseudo, role, authenticated }: Props) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function signOut() {
+    if (loading) return;
     setLoading(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      // Force un full reload pour vider le cache serveur et les cookies.
+      window.location.href = "/";
+    } catch {
+      setLoading(false);
+    }
   }
 
   if (!authenticated) {

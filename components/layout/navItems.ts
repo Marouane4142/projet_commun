@@ -20,7 +20,7 @@ export type NavItem = {
 
 export const navItems: NavItem[] = [
   { href: "/", label: "Accueil", icon: Trophy },
-  { href: "/regie", label: "Régie live", icon: Radio },
+  { href: "/regie", label: "Régie live", icon: Radio, gerantOnly: true },
   { href: "/dashboard", label: "Duel de zones", icon: Gauge },
   { href: "/diffusion", label: "Diffusion", icon: Clapperboard },
   { href: "/alcoolemie", label: "Alcoolémie", icon: Wine, gerantOnly: true },
