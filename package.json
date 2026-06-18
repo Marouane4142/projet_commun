@@ -2,6 +2,9 @@
   "name": "fanbar-arena",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -26,8 +29,5 @@
     "eslint-config-next": "^15.3.0",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.8.0"
-  },
-  "overrides": {
-    "postcss": "8.5.10"
   }
 }
