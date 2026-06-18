@@ -40,16 +40,16 @@ export default async function HomePage() {
             FanBar Arena
           </h1>
           <p className="mt-4 text-lg text-slate-200 sm:text-xl">
-            La regie connectee d&apos;un bar de supporters. Le son, l&apos;affluence,
-            l&apos;air et le service sont pilotes en temps reel grace au reseau de
-            capteurs de toute la salle.
+            La régie connectée d&apos;un bar de supporters. Le son, l&apos;affluence,
+            l&apos;air et le confort sont pilotés en temps réel grâce aux capteurs
+            de tout le bar.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
               href="/regie"
               className="flex min-h-12 items-center gap-2 rounded-xl bg-emerald-400 px-5 font-black text-slate-950 transition hover:bg-emerald-300"
             >
-              <Radio size={18} /> Ouvrir la regie live
+              <Radio size={18} /> Ouvrir la régie live
             </Link>
             {user ? (
               <Link
@@ -63,7 +63,7 @@ export default async function HomePage() {
                 href="/register"
                 className="flex min-h-12 items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-5 font-black text-white transition hover:bg-white/10"
               >
-                Creer un compte <ArrowRight size={18} />
+                Créer un compte <ArrowRight size={18} />
               </Link>
             )}
           </div>
@@ -104,7 +104,7 @@ export default async function HomePage() {
         />
         <LiveStat
           icon={Wind}
-          label="Qualite de l'air"
+          label="Qualité de l'air"
           value={air?.value != null ? `${air.value}` : "--"}
           sub="ppm"
           accent="#fbbf24"
@@ -113,18 +113,18 @@ export default async function HomePage() {
 
       {/* Capteurs du bar */}
       <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
-        <h2 className="text-2xl font-black">Tout le bar, en temps reel</h2>
+        <h2 className="text-2xl font-black">Tout le bar, en temps réel</h2>
         <p className="mt-2 max-w-3xl text-slate-300">
-          Le bar est equipe de plusieurs capteurs qui mesurent en continu
-          l&apos;ambiance, le confort et la securite. FanBar Arena reunit toutes
-          ces informations pour piloter la soiree d&apos;un seul coup d&apos;oeil.
+          Le bar est équipé de plusieurs capteurs qui mesurent en continu
+          l&apos;ambiance, le confort et la sécurité. FanBar Arena réunit toutes
+          ces informations pour piloter la soirée d&apos;un seul coup d&apos;œil.
         </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <NetworkCard title="Ambiance sonore" desc="Niveau sonore des supporters, zone par zone." live={sound?.status === "live"} />
-          <NetworkCard title="Affluence" desc="Comptage des entrees et sorties du bar." live={affluence?.status === "live"} />
-          <NetworkCard title="Qualite de l'air" desc="Detection de fumee et securite incendie." live={air?.status === "live"} />
-          <NetworkCard title="Prevention alcool" desc="Mesure d'alcoolemie avant le depart." live={alcohol?.status === "live"} />
-          <NetworkCard title="Temperature & humidite" desc="Confort thermique de la salle, en continu." live={temperature?.status === "live"} />
+          <NetworkCard title="Affluence" desc="Comptage des entrées et sorties du bar." live={affluence?.status === "live"} />
+          <NetworkCard title="Qualité de l'air" desc="Détection de fumée et sécurité incendie." live={air?.status === "live"} />
+          <NetworkCard title="Prévention alcool" desc="Mesure d'alcoolémie avant le départ." live={alcohol?.status === "live"} />
+          <NetworkCard title="Température & humidité" desc="Confort thermique de la salle, en continu." live={temperature?.status === "live"} />
         </div>
       </section>
 
@@ -133,20 +133,20 @@ export default async function HomePage() {
         <FeatureLink
           href="/regie"
           icon={Radio}
-          title="Regie live"
-          desc="Le cockpit temps reel multi-capteurs avec indices et alertes."
+          title="Régie live"
+          desc="Le cockpit temps réel multi-capteurs avec indices et alertes."
         />
         <FeatureLink
           href="/diffusion"
           icon={Clapperboard}
           title="Diffusion"
-          desc="Resumes officiels FIFA 2026 integres directement dans le site."
+          desc="Les résumés de la Coupe du Monde 2026 intégrés au site."
         />
         <FeatureLink
           href="/about"
           icon={ShieldCheck}
-          title="Architecture"
-          desc="Securite, eco-conception et accessibilite du projet."
+          title="Le projet"
+          desc="Sécurité, éco-conception et accessibilité de l'application."
         />
       </section>
     </div>

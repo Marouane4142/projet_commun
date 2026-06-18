@@ -41,6 +41,20 @@ export function getReadingStatus(type: MetricType, value: number): ReadingStatus
     return "ok";
   }
 
+  if (type === "alcohol") {
+    if (value >= 0.8) return "critical";
+    if (value >= 0.5) return "alert";
+    if (value >= 0.3) return "warning";
+    return "ok";
+  }
+
+  if (type === "humidity") {
+    if (value >= 85 || value <= 20) return "critical";
+    if (value >= 75 || value <= 30) return "alert";
+    if (value >= 65 || value <= 35) return "warning";
+    return "ok";
+  }
+
   if (value >= 90) return "critical";
   if (value >= 80) return "alert";
   if (value >= 65) return "warning";

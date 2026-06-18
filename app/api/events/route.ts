@@ -5,6 +5,7 @@ import {
   startBridgeEvent,
 } from "@/lib/cardBridgeService";
 import { createEvent, listEvents, updateEventStatus } from "@/lib/eventService";
+import { requireGerant } from "@/lib/authGuard";
 import type { FanEventStatus, MatchOption } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = await requireGerant();
+  if (!guard.ok) return guard.response;
+
   const body = (await request.json()) as {
     name?: unknown;
     match?: Partial<MatchOption>;

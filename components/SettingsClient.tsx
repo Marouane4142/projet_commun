@@ -30,14 +30,14 @@ export function SettingsClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ thresholds }),
     });
-    setMessage("Seuils sauvegardes en mode mock.");
+    setMessage("Seuils enregistrés pour la session.");
   }
 
   return (
     <div className="space-y-5">
       <section className="rounded-lg border border-white/10 bg-white/[0.05] p-6">
-        <p className="text-xs font-black uppercase text-amber-300">Parametres</p>
-        <h1 className="mt-2 text-4xl font-black text-white">Seuils capteurs</h1>
+        <p className="text-xs font-black uppercase text-amber-300">Paramètres</p>
+        <h1 className="mt-2 text-4xl font-black text-white">Seuils des capteurs</h1>
         <p className="mt-3 text-slate-400">
           Les seuils pilotent les statuts, les alertes et les recommandations
           affiches dans toute l&apos;application.
@@ -52,7 +52,7 @@ export function SettingsClient() {
               className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.04] p-4 lg:grid-cols-[1fr_repeat(3,160px)]"
             >
               <div>
-                <span className="text-xs font-black uppercase text-slate-500">Metrique</span>
+                <span className="text-xs font-black uppercase text-slate-500">Capteur</span>
                 <strong className="mt-1 block text-lg text-white">{metricLabels[threshold.metricType]}</strong>
               </div>
               <ThresholdInput label="Warning" value={threshold.warningValue} unit={threshold.unit} onChange={(value) => updateThreshold(threshold.id, "warningValue", value)} />

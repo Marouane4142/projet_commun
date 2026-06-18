@@ -95,7 +95,7 @@ export async function stopBridgeEvent(eventId: number) {
 }
 
 export function parseElectronicCardId(card: string) {
-  // Match the LAST digit sequence — "G1A-2" must return 2, not 1 (the digit in "G1A")
+  // Match the LAST digit sequence - "G1A-2" must return 2, not 1 (the digit in "G1A")
   const match = card.match(/(\d+)\D*$/);
   if (!match) return null;
 

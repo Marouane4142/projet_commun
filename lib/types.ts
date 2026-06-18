@@ -3,7 +3,9 @@ export type MetricType =
   | "decibel"
   | "smoke"
   | "gas"
-  | "people_count";
+  | "people_count"
+  | "alcohol"
+  | "humidity";
 
 export type ReadingStatus = "ok" | "warning" | "alert" | "critical";
 export type MatchStatus = "scheduled" | "live" | "halftime" | "finished";
@@ -134,6 +136,15 @@ export type EventZoneAssignment = {
   color: string;
 };
 
+export type EventStats = {
+  avgSound: number | null; // dB moyen sur la duree de l'evenement (toutes zones)
+  zoneASound: number | null; // dB moyen zone A
+  zoneBSound: number | null; // dB moyen zone B
+  avgTemperature: number | null; // C moyen
+  avgAlcohol: number | null; // g/L moyen
+  peakAffluence: number | null; // pic de frequentation (pas une moyenne)
+};
+
 export type FanEvent = {
   id: number;
   name: string;
@@ -150,13 +161,7 @@ export type FanEvent = {
   finishedAt: string | null;
   createdAt: string;
   updatedAt: string;
-};
-
-export type EventMetricAverage = {
-  type: MetricType;
-  zoneA: number | null;
-  zoneB: number | null;
-  unit: string;
+  stats: EventStats;
 };
 
 export type EventHistoryItem = {
@@ -165,7 +170,19 @@ export type EventHistoryItem = {
     home: number | null;
     away: number | null;
   };
-  averages: EventMetricAverage[];
+};
+
+export type HistoryRankingEntry = {
+  eventId: number;
+  name: string;
+  value: number;
+};
+
+export type HistoryRankings = {
+  loudest: HistoryRankingEntry | null;
+  hottest: HistoryRankingEntry | null;
+  drunkest: HistoryRankingEntry | null;
+  busiest: HistoryRankingEntry | null;
 };
 
 export type Alert = {
@@ -224,9 +241,39 @@ export type AlcoholInsights = {
   latest: number | null;
   max: number | null;
   average: number | null;
+  // Moyenne des derniers tests par personne dans l'heure precedant le dernier
+  // test global : reflete l'alcoolemie de la foule presente en ce moment.
+  recentAverage: number | null;
+  recentCount: number;
   overLimit: number; // sujets au-dessus de la limite legale
   limit: number;
   perSubject: AlcoholSubject[];
+};
+
+export type AlcoholPoint = { t: string; level: number };
+
+export type AlcoholPerson = {
+  subjectId: string;
+  name: string; // alias defini par un gerant, sinon "Personne X"
+  userId: string | null; // compte associe par un gerant (pour voir ses propres stats)
+  deviceId: string | null;
+  latest: number;
+  max: number;
+  average: number;
+  count: number;
+  lastTestAt: string;
+  status: ReadingStatus;
+  series: AlcoholPoint[];
+};
+
+export type AlcoholReport = {
+  limit: number;
+  totalMeasures: number;
+  people: AlcoholPerson[];
+  dangers: AlcoholPerson[];
+  recentAverage: number | null;
+  recentCount: number;
+  generatedAt: string;
 };
 
 export type EcoAlert = {
@@ -280,34 +327,11 @@ export type ZoneScore = {
   alerts: Alert[];
 };
 
-export type DashboardVenue = {
-  occupancy: {
-    current: number | null;
-    capacity: number | null;
-    ratio: number | null;
-  };
-  affluence: {
-    value: number | null;
-    unit: string;
-    status: ReadingStatus | null;
-    live: boolean;
-  };
-  air: {
-    value: number | null;
-    unit: string;
-    status: ReadingStatus | null;
-    live: boolean;
-  };
-  indices: EcoIndex[];
-  alerts: EcoAlert[];
-};
-
 export type DashboardData = {
   event: FanEvent | null;
   match: MatchSnapshot;
   zones: ZoneScore[];
   winner: ZoneScore | null;
-  venue: DashboardVenue | null;
   globalSummary: string;
   sources: {
     matchLive: boolean;

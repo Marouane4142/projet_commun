@@ -58,8 +58,8 @@ export function UserMenu({ pseudo, role, authenticated }: Props) {
         type="button"
         onClick={signOut}
         disabled={loading}
-        aria-label="Se deconnecter"
-        title="Se deconnecter"
+        aria-label="Se déconnecter"
+        title="Se déconnecter"
         className="grid h-10 w-10 place-items-center rounded-lg border border-white/10 bg-white/[0.05] text-slate-300 transition hover:bg-white/10 hover:text-white disabled:opacity-60"
       >
         <LogOut size={16} />

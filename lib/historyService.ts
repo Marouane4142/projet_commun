@@ -1,69 +1,50 @@
-import { eventToZones, listEvents } from "./eventService";
-import { getAllReadings, mapReadingsToEventZones } from "./fanbarService";
-import type { EventHistoryItem, MetricType, SensorReading } from "./types";
+import { listEvents } from "./eventService";
+import type {
+  EventHistoryItem,
+  HistoryRankingEntry,
+  HistoryRankings,
+} from "./types";
 
-const metricTypes: MetricType[] = ["decibel", "temperature", "smoke", "gas", "people_count"];
-
+/**
+ * Historique des evenements termines. Toutes les statistiques (son par zone,
+ * moyennes, pic d'affluence) sont CAPTUREES a la cloture et stockees dans
+ * g1a_events -> l'historique reste exact meme pour les vieux evenements et
+ * coherent avec les classements.
+ */
 export async function getFinishedEventHistory() {
-  const [{ events, message }, readings] = await Promise.all([
-    listEvents({ status: "finished" }),
-    getAllReadings(1000),
-  ]);
+  const { events, message } = await listEvents({ status: "finished" });
 
-  const items: EventHistoryItem[] = events.map((event) => {
-    const mappedReadings = mapReadingsToEventZones(readings, eventToZones(event));
-    const eventReadings = mappedReadings.filter((reading) =>
-      isReadingInsideEvent(reading, event.createdAt, event.finishedAt ?? event.updatedAt),
-    );
-
-    return {
-      event,
-      score: {
-        home: event.finalHomeScore,
-        away: event.finalAwayScore,
-      },
-      averages: metricTypes.map((type) => ({
-        type,
-        zoneA: averageMetric(eventReadings, type, 1),
-        zoneB: averageMetric(eventReadings, type, 2),
-        unit: getMetricUnit(type),
-      })),
-    };
-  });
+  const items: EventHistoryItem[] = events.map((event) => ({
+    event,
+    score: { home: event.finalHomeScore, away: event.finalAwayScore },
+  }));
 
   return {
     items,
+    rankings: buildRankings(items),
     message,
   };
 }
 
-function isReadingInsideEvent(reading: SensorReading, startValue: string, endValue: string) {
-  const measuredAt = new Date(reading.measuredAt).getTime();
-  const start = new Date(startValue).getTime();
-  const end = new Date(endValue).getTime();
+function buildRankings(items: EventHistoryItem[]): HistoryRankings {
+  const best = (
+    pick: (i: EventHistoryItem) => number | null,
+  ): HistoryRankingEntry | null => {
+    let winner: HistoryRankingEntry | null = null;
+    for (const item of items) {
+      const value = pick(item);
+      if (value == null) continue;
+      if (!winner || value > winner.value) {
+        winner = { eventId: item.event.id, name: item.event.name, value };
+      }
+    }
+    return winner;
+  };
 
-  if (!Number.isFinite(measuredAt) || !Number.isFinite(start) || !Number.isFinite(end)) {
-    return false;
-  }
-
-  return measuredAt >= start && measuredAt <= end;
-}
-
-function averageMetric(readings: SensorReading[], type: MetricType, zoneId: number) {
-  const values = readings
-    .filter((reading) => reading.type === type && reading.zoneId === zoneId)
-    .map((reading) => reading.value);
-
-  if (values.length === 0) return null;
-
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return Number((total / values.length).toFixed(1));
-}
-
-function getMetricUnit(type: MetricType) {
-  if (type === "decibel") return "dB";
-  if (type === "temperature") return "C";
-  if (type === "smoke") return "%";
-  if (type === "gas") return "ppm";
-  return "pers.";
+  return {
+    loudest: best((i) => i.event.stats.avgSound),
+    hottest: best((i) => i.event.stats.avgTemperature),
+    drunkest: best((i) => i.event.stats.avgAlcohol),
+    busiest: best((i) => i.event.stats.peakAffluence),
+  };
 }

@@ -1,37 +1,10 @@
-import {
-  BarChart3,
-  CalendarPlus,
-  Clapperboard,
-  Gauge,
-  Info,
-  Radio,
-  Settings,
-  Target,
-  Trophy,
-} from "lucide-react";
+import { Trophy } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getCurrentUser, isGerant } from "@/lib/profileService";
 import { UserMenu } from "@/components/UserMenu";
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: typeof Gauge;
-  gerantOnly?: boolean;
-};
-
-const navItems: NavItem[] = [
-  { href: "/", label: "Accueil", icon: Trophy },
-  { href: "/regie", label: "Regie live", icon: Radio },
-  { href: "/dashboard", label: "Duel de zones", icon: Gauge },
-  { href: "/diffusion", label: "Diffusion", icon: Clapperboard },
-  { href: "/predictions", label: "Pronostics", icon: Target },
-  { href: "/history", label: "Historique", icon: BarChart3 },
-  { href: "/events/new", label: "Creer event", icon: CalendarPlus, gerantOnly: true },
-  { href: "/settings", label: "Seuils", icon: Settings, gerantOnly: true },
-  { href: "/about", label: "A propos", icon: Info },
-];
+import { MobileNav } from "@/components/MobileNav";
+import { navItems } from "@/components/navItems";
 
 export async function AppShell({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
@@ -47,7 +20,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         Aller au contenu
       </a>
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(37,99,235,0.22),transparent_30%),radial-gradient(circle_at_88%_10%,rgba(250,204,21,0.12),transparent_28%),linear-gradient(145deg,#071019_0%,#111827_52%,#05070a_100%)]" />
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[1480px]">
+      <div className="relative flex min-h-screen w-full">
         <aside className="hidden w-72 shrink-0 flex-col border-r border-white/10 bg-black/20 px-5 py-6 backdrop-blur xl:flex">
           <Link href="/" className="flex items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-lg bg-emerald-400 text-slate-950">
@@ -56,7 +29,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
             <span>
               <span className="block text-lg font-black leading-tight">FanBar Arena</span>
               <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                Regie Coupe du Monde
+                Régie Coupe du Monde
               </span>
             </span>
           </Link>
@@ -76,30 +49,21 @@ export async function AppShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-
-          <div className="mt-auto rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-50">
-            <div className="flex items-center gap-2 font-black">
-              <Radio size={16} />
-              Capteurs connectes
-            </div>
-            <p className="mt-2 leading-6 text-emerald-100/75">
-              La regie reunit tous les capteurs du bar : ambiance sonore,
-              affluence, qualite de l&apos;air, confort et prevention.
-            </p>
-          </div>
         </aside>
 
         <main id="main-content" className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">
-          <header className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur">
+          <header className="relative mb-6 flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur">
             <Link href="/" className="flex items-center gap-2 font-black xl:hidden">
               <span className="grid h-8 w-8 place-items-center rounded-md bg-emerald-400 text-slate-950">
                 <Trophy size={16} />
               </span>
               FanBar Arena
             </Link>
+
+            {/* Tablette : barre d'icônes (le téléphone utilise le menu burger) */}
             <nav
-              aria-label="Navigation mobile"
-              className="flex gap-2 overflow-x-auto xl:hidden"
+              aria-label="Navigation"
+              className="hidden gap-2 overflow-x-auto md:flex xl:hidden"
             >
               {items.map((item) => {
                 const Icon = item.icon;
@@ -116,12 +80,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
                 );
               })}
             </nav>
-            <div className="ml-auto">
+
+            <div className="ml-auto flex items-center gap-2">
               <UserMenu
                 authenticated={Boolean(user)}
                 pseudo={user?.profile?.pseudo ?? null}
                 role={user?.profile?.role ?? null}
               />
+              <MobileNav gerant={gerant} />
             </div>
           </header>
           {children}

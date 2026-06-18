@@ -115,7 +115,7 @@ export function MatchSelector({
 
   const selectedLabel = useMemo(() => {
     const match = matchesPayload?.matches.find((item) => item.id === selectedMatchId);
-    if (!match) return selectedMatchId ? "Match selectionne" : "Aucun match selectionne";
+    if (!match) return selectedMatchId ? "Match sélectionné" : "Aucun match sélectionné";
     return `${match.label} - ${formatDateTime(match.kickoffAt)}`;
   }, [matchesPayload?.matches, selectedMatchId]);
 
@@ -148,10 +148,10 @@ export function MatchSelector({
     <article className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase text-cyan-300">Selection du match reel</p>
+          <p className="text-xs font-black uppercase text-cyan-300">Sélection du match réel</p>
           <h2 className="mt-1 text-2xl font-black text-white">{selectedLabel}</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Source : Highlightly. Choisis une equipe, puis un futur match.
+            Choisis une équipe, puis un futur match à venir.
           </p>
         </div>
         <button
@@ -166,7 +166,7 @@ export function MatchSelector({
 
       <form onSubmit={submitTeamSearch} className="mt-5 flex flex-col gap-3 sm:flex-row">
         <label className="min-w-0 flex-1 text-sm font-bold text-slate-300">
-          Equipe
+          Équipe
           <span className="mt-2 flex min-h-12 items-center rounded-lg border border-white/10 bg-slate-900 px-3 focus-within:border-cyan-300/50">
             <Search size={17} className="shrink-0 text-slate-500" />
             <input
@@ -200,14 +200,14 @@ export function MatchSelector({
 
       {!teamsPayload?.configured ? (
         <p className="mt-4 rounded-lg border border-cyan-300/25 bg-cyan-300/10 p-3 text-sm text-cyan-100">
-          La source des matchs en direct n&apos;est pas encore configuree.
+          La source des matchs en direct n&apos;est pas encore configurée.
         </p>
       ) : null}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
         <section>
           <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-black uppercase text-slate-500">Equipes trouvees</p>
+            <p className="text-xs font-black uppercase text-slate-500">Équipes trouvées</p>
             {teamsLoading ? <span className="text-xs font-bold text-cyan-200">Chargement...</span> : null}
           </div>
 

@@ -39,7 +39,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
       if (isRegister) {
         const cleanPseudo = pseudo.trim();
         if (cleanPseudo.length < 2) {
-          throw new Error("Choisis un pseudo d'au moins 2 caracteres.");
+          throw new Error("Choisis un pseudo d'au moins 2 caractères.");
         }
         const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
@@ -59,7 +59,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
           });
           if (signInError) {
             throw new Error(
-              "Compte cree. Confirme ton email puis connecte-toi.",
+              "Compte créé. Confirme ton email puis connecte-toi.",
             );
           }
           await ensureProfile(userId, cleanPseudo);
@@ -100,12 +100,12 @@ export function AuthClient({ mode }: { mode: Mode }) {
           </span>
           <div>
             <h1 className="text-xl font-black">
-              {isRegister ? "Creer un compte" : "Connexion"}
+              {isRegister ? "Créer un compte" : "Connexion"}
             </h1>
             <p className="text-sm text-slate-400">
               {isRegister
                 ? "Rejoins la FanBar Arena."
-                : "Accede a la regie connectee."}
+                : "Accède à la régie connectée."}
             </p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
               </button>
             </div>
             {isRegister && (
-              <p className="text-xs text-slate-500">6 caracteres minimum.</p>
+              <p className="text-xs text-slate-500">6 caractères minimum.</p>
             )}
           </div>
 
@@ -185,7 +185,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
             ) : (
               <LogIn size={18} />
             )}
-            {isRegister ? "Creer mon compte" : "Se connecter"}
+            {isRegister ? "Créer mon compte" : "Se connecter"}
           </button>
         </form>
 
@@ -197,7 +197,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
         <p className="mt-5 text-center text-sm text-slate-400">
           {isRegister ? (
             <>
-              Deja un compte ?{" "}
+              Déjà un compte ?{" "}
               <Link href="/login" className="font-bold text-emerald-300 hover:underline">
                 Se connecter
               </Link>
@@ -206,7 +206,7 @@ export function AuthClient({ mode }: { mode: Mode }) {
             <>
               Pas encore de compte ?{" "}
               <Link href="/register" className="font-bold text-emerald-300 hover:underline">
-                Creer un compte
+                Créer un compte
               </Link>
             </>
           )}
@@ -255,9 +255,9 @@ function translateError(message: string): string {
   const m = message.toLowerCase();
   if (m.includes("invalid login")) return "Email ou mot de passe incorrect.";
   if (m.includes("already registered") || m.includes("already been registered"))
-    return "Un compte existe deja avec cet email.";
+    return "Un compte existe déjà avec cet email.";
   if (m.includes("password should be"))
-    return "Mot de passe trop court (6 caracteres minimum).";
+    return "Mot de passe trop court (6 caractères minimum).";
   if (m.includes("unable to validate email") || m.includes("invalid email"))
     return "Email invalide.";
   return message;

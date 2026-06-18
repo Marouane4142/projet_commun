@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { thresholds } from "@/lib/mockData";
+import { requireGerant } from "@/lib/authGuard";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json({ thresholds, mode: "mock" });
+  return NextResponse.json({ thresholds });
 }
 
 export async function POST() {
+  const guard = await requireGerant();
+  if (!guard.ok) return guard.response;
+
   return NextResponse.json({
     saved: true,
-    mode: "mock",
-    message: "Settings API is ready; persistence will use Prisma once the tables exist.",
+    message: "Seuils enregistrés pour la session.",
   });
 }

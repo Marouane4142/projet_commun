@@ -1,18 +1,12 @@
 "use client";
 
-import {
-  AlertTriangle,
-  CalendarPlus,
-  CheckCircle2,
-  RefreshCw,
-  Users,
-  Wind,
-} from "lucide-react";
+import { CalendarPlus, CheckCircle2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DashboardData, DashboardVenue, FanEvent, ZoneScore } from "@/lib/types";
-import { formatDateTime, formatValue, metricLabels } from "@/lib/format";
+import type { DashboardData, FanEvent, ZoneScore } from "@/lib/types";
+import { formatDateTime, formatValue } from "@/lib/format";
 import { stopLocalBridgeEvent } from "@/lib/localBridgeClient";
+import { EcosystemLive } from "@/components/EcosystemLive";
 
 const refreshDelay = 2_000;
 const eventStorageKey = "fanbar:selected-event-id";
@@ -46,7 +40,7 @@ export function DashboardClient() {
       setEventsMessage(payload.message ?? null);
     } catch (requestError) {
       setEventsMessage(
-        requestError instanceof Error ? requestError.message : "Chargement des evenements impossible.",
+        requestError instanceof Error ? requestError.message : "Chargement des événements impossible.",
       );
     } finally {
       setEventsLoading(false);
@@ -64,7 +58,7 @@ export function DashboardClient() {
       const payload = (await response.json()) as DashboardData & { error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Chargement impossible.");
       setData(payload);
-      setError(selectedEventId && !payload.event ? "Evenement introuvable." : null);
+      setError(selectedEventId && !payload.event ? "Événement introuvable." : null);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Erreur inconnue.");
     } finally {
@@ -136,7 +130,7 @@ export function DashboardClient() {
       const payload = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        throw new Error(payload.error ?? "Impossible de terminer l'evenement.");
+        throw new Error(payload.error ?? "Impossible de terminer l'événement.");
       }
 
       window.localStorage.removeItem(eventStorageKey);
@@ -152,10 +146,10 @@ export function DashboardClient() {
     return (
       <div className="space-y-5">
         <section className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
-          <p className="text-xs font-black uppercase text-emerald-300">Dashboard live</p>
-          <h1 className="mt-2 text-4xl font-black text-white">Choisir un evenement</h1>
+          <p className="text-xs font-black uppercase text-emerald-300">Tableau de bord live</p>
+          <h1 className="mt-2 text-4xl font-black text-white">Choisir un événement</h1>
           <p className="mt-3 text-slate-400">
-            Selectionne une session existante pour ouvrir le score et les deux zones live.
+            Sélectionne une session pour ouvrir le score et les deux zones en direct.
           </p>
         </section>
 
@@ -208,7 +202,7 @@ export function DashboardClient() {
           </div>
           <p className="mt-4 text-sm text-slate-400">
             {data?.match.competition ?? selectedEvent.competition} - {data?.match.status ?? selectedEvent.status}
-            {" "} - minute {data?.match.minute ?? "--"} - score actualise max toutes les 2 min
+            {" "} - minute {data?.match.minute ?? "--"} - score actualisé au maximum toutes les 2 min
           </p>
         </div>
       </section>
@@ -217,112 +211,17 @@ export function DashboardClient() {
         <p className="rounded-lg border border-rose-400/30 bg-rose-500/15 p-4 text-rose-100">{error}</p>
       ) : null}
 
-      {data?.venue ? <VenuePanel venue={data.venue} /> : null}
-
       {zoneB && zoneA ? <MetricsComparison left={zoneB} right={zoneA} /> : null}
 
+      <EcosystemLive />
+
       <p className="text-xs text-slate-500">
-        Metrics actualisees toutes les 2s. Derniere generation : {formatDateTime(data?.generatedAt)}
+        Métriques actualisées toutes les 2 s. Dernière génération : {formatDateTime(data?.generatedAt)}
       </p>
     </div>
   );
 }
 
-function VenuePanel({ venue }: { venue: DashboardVenue }) {
-  const indexColor = (value: number | null) => {
-    if (value == null) return "#64748b";
-    if (value >= 70) return "#34d399";
-    if (value >= 45) return "#facc15";
-    return "#f87171";
-  };
-
-  return (
-    <section className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-black uppercase text-emerald-300">
-          Ambiance de la salle
-        </p>
-        <p className="text-[11px] text-slate-500">
-          Son, affluence et qualite de l&apos;air en temps reel
-        </p>
-      </div>
-
-      {venue.alerts.length > 0 ? (
-        <div className="mt-4 grid gap-2">
-          {venue.alerts.map((alert) => (
-            <div
-              key={alert.id}
-              role="alert"
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                alert.severity === "critical"
-                  ? "border-rose-400/40 bg-rose-500/10 text-rose-100"
-                  : alert.severity === "alert"
-                    ? "border-orange-400/40 bg-orange-500/10 text-orange-100"
-                    : "border-yellow-400/30 bg-yellow-500/10 text-yellow-100"
-              }`}
-            >
-              <AlertTriangle size={15} className="shrink-0" />
-              <span>{alert.message}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
-            <Users size={14} /> Affluence
-          </div>
-          <div className="mt-2 text-3xl font-black text-white">
-            {venue.affluence.live && venue.affluence.value != null
-              ? venue.affluence.value
-              : "--"}
-            <span className="ml-1 text-sm text-slate-400">{venue.affluence.unit}</span>
-          </div>
-          <div className="mt-1 text-xs text-slate-500">
-            {venue.occupancy.capacity
-              ? `${venue.occupancy.current ?? "--"} / ${venue.occupancy.capacity} places`
-              : "Capacite inconnue"}
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
-            <Wind size={14} /> Qualite de l&apos;air
-          </div>
-          <div className="mt-2 text-3xl font-black text-white">
-            {venue.air.live && venue.air.value != null ? venue.air.value : "--"}
-            <span className="ml-1 text-sm text-slate-400">{venue.air.unit}</span>
-          </div>
-          <div className="mt-1 text-xs text-slate-500">
-            {venue.air.status ? `Etat : ${venue.air.status}` : "En attente"}
-          </div>
-        </div>
-
-        {venue.indices
-          .filter((i) => i.key === "fete" || i.key === "securite")
-          .map((index) => (
-            <div
-              key={index.key}
-              className="rounded-lg border border-white/10 bg-white/[0.04] p-4"
-            >
-              <div className="text-xs font-bold uppercase text-slate-400">
-                {index.label}
-              </div>
-              <div
-                className="mt-2 text-3xl font-black"
-                style={{ color: indexColor(index.value) }}
-              >
-                {index.value ?? "--"}
-                <span className="ml-1 text-sm text-slate-500">/100</span>
-              </div>
-              <div className="mt-1 text-xs text-slate-500">{index.caption}</div>
-            </div>
-          ))}
-      </div>
-    </section>
-  );
-}
 
 function EventSelector({
   events,
@@ -341,8 +240,8 @@ function EventSelector({
     <article className="rounded-lg border border-white/10 bg-slate-950/55 p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase text-cyan-300">Evenements en cours</p>
-          <h2 className="mt-1 text-2xl font-black text-white">Selectionner une session</h2>
+          <p className="text-xs font-black uppercase text-cyan-300">Événements en cours</p>
+          <h2 className="mt-1 text-2xl font-black text-white">Sélectionner une session</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -358,7 +257,7 @@ function EventSelector({
             className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-400 px-4 font-black text-slate-950"
           >
             <CalendarPlus size={17} />
-            Nouvel evenement
+            Nouvel événement
           </Link>
         </div>
       </div>
@@ -369,7 +268,7 @@ function EventSelector({
         </p>
       ) : null}
 
-      {loading ? <p className="mt-4 text-sm text-slate-400">Chargement des evenements...</p> : null}
+      {loading ? <p className="mt-4 text-sm text-slate-400">Chargement des événements...</p> : null}
 
       <div className="mt-4 grid gap-2 lg:grid-cols-2">
         {events.map((event) => (
@@ -398,7 +297,7 @@ function EventSelector({
 
       {!loading && events.length === 0 ? (
         <p className="mt-4 rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-400">
-          Aucun evenement actif. Cree un evenement pour ouvrir le dashboard.
+          Aucun événement actif. Crée un événement pour ouvrir le tableau de bord.
         </p>
       ) : null}
     </article>
@@ -426,7 +325,7 @@ function MetricsComparison({ left, right }: { left: ZoneScore; right: ZoneScore 
         </div>
         <div className="text-center">
           <p className="text-xs font-black uppercase text-cyan-300">Statistiques des zones</p>
-          <p className="mt-1 text-sm text-slate-400">Metrics live par carte electronique</p>
+          <p className="mt-1 text-sm text-slate-400">Mesures en direct par carte électronique</p>
         </div>
         <div className="md:text-right">
           <p className="text-xs font-black uppercase text-slate-500">{right.zone.name}</p>
@@ -500,15 +399,12 @@ function ComparisonRow({
 }
 
 function buildComparisonRows(left: ZoneScore, right: ZoneScore): ComparisonRowData[] {
+  // Le duel des zones se joue sur le SON (le seul capteur dédié à chaque zone).
+  // Le reste des capteurs (affluence, air, température...) est niveau salle et
+  // s'affiche dans la section « Ambiance & sécurité de la salle ».
   return [
-    makeRow("Ambiance", left.ambianceScore, right.ambianceScore, ""),
-    makeRow(metricLabels.decibel, left.latest.decibel?.value ?? null, right.latest.decibel?.value ?? null, "dB"),
+    makeRow("Niveau sonore", left.latest.decibel?.value ?? null, right.latest.decibel?.value ?? null, "dB"),
     makeRow("Pic sonore", left.soundPeak, right.soundPeak, "dB"),
-    makeRow("Confort", left.comfortScore, right.comfortScore, ""),
-    makeRow(metricLabels.people_count, left.latest.people_count?.value ?? null, right.latest.people_count?.value ?? null, "pers."),
-    makeRow(metricLabels.temperature, left.latest.temperature?.value ?? null, right.latest.temperature?.value ?? null, "C"),
-    makeRow(metricLabels.smoke, left.latest.smoke?.value ?? null, right.latest.smoke?.value ?? null, "%"),
-    makeRow(metricLabels.gas, left.latest.gas?.value ?? null, right.latest.gas?.value ?? null, "ppm"),
   ];
 }
 

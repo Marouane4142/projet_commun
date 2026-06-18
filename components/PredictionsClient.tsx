@@ -59,8 +59,8 @@ export function PredictionsClient({ authenticated, userId, pseudo }: Props) {
   if (events.length === 0) {
     return (
       <p className="rounded-xl border border-white/10 bg-white/[0.04] p-5 text-slate-400">
-        Aucun evenement disponible pour le moment. Reviens quand un match est
-        programme dans la regie.
+        Aucun événement disponible pour le moment. Reviens quand un match est
+        programmé dans la régie.
       </p>
     );
   }
@@ -72,7 +72,7 @@ export function PredictionsClient({ authenticated, userId, pseudo }: Props) {
           <Link href="/login" className="font-black underline">
             Connecte-toi
           </Link>{" "}
-          pour deposer ton pronostic et rejoindre le classement des supporters.
+          pour déposer ton pronostic et rejoindre le classement des supporters.
         </div>
       )}
 
@@ -150,16 +150,23 @@ function EventPredictionCard({
     { home: 0, away: 0, draw: 0 },
   );
 
-  // Les pronostics ne sont ouverts que tant que le match n'est pas termine.
-  const open = event.status !== "finished" && event.status !== "archived";
-  const statusLabel =
-    event.status === "active"
+  // Les pronostics ferment 15 min apres le COUP D'ENVOI du match (pas de l'evenement).
+  const kickoff = new Date(event.kickoffAt).getTime();
+  const closeAt = kickoff + 15 * 60_000;
+  const now = Date.now();
+  const open =
+    Number.isFinite(kickoff) &&
+    now < closeAt &&
+    event.status !== "finished" &&
+    event.status !== "archived";
+  const hasResult = event.finalHomeScore != null && event.finalAwayScore != null;
+  const statusLabel = !open
+    ? event.status === "finished"
+      ? "Terminé"
+      : "Pronostics fermés"
+    : now >= kickoff
       ? "En cours"
-      : event.status === "planned"
-        ? "A venir"
-        : event.status === "finished"
-          ? "Termine"
-          : "Archive";
+      : "À venir";
 
   return (
     <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
@@ -182,7 +189,9 @@ function EventPredictionCard({
         {/* Formulaire */}
         {!open ? (
           <div className="grid place-items-center rounded-xl border border-white/10 bg-black/20 p-4 text-center text-sm text-slate-400">
-            Pronostics clos — ce match est termine.
+            {hasResult
+              ? `Pronostics clos - score final ${event.finalHomeScore}-${event.finalAwayScore}.`
+              : "Pronostics fermés - le coup d'envoi est passé."}
           </div>
         ) : authenticated ? (
           <form
@@ -192,6 +201,11 @@ function EventPredictionCard({
             <p className="text-xs font-black uppercase text-emerald-300">
               {mine ? "Modifier mon pronostic" : "Mon pronostic"}
             </p>
+            {mine && (
+              <p className="text-center text-[11px] text-slate-500">
+                Pronostic déjà enregistré
+              </p>
+            )}
             <div className="mt-3 flex items-center justify-center gap-3">
               <ScoreInput label={event.homeTeam} value={home} onChange={setHome} />
               <span className="text-2xl font-black text-slate-500">-</span>
@@ -209,7 +223,7 @@ function EventPredictionCard({
           </form>
         ) : (
           <div className="grid place-items-center rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-400">
-            Connexion requise pour pronostiquer.
+            Connexion requise pour pronostiquer.{" "}
           </div>
         )}
 
@@ -225,23 +239,41 @@ function EventPredictionCard({
                 <Vote label="Nul" count={winnerVotes.draw} color="#94a3b8" />
                 <Vote label={event.awayTeam} count={winnerVotes.away} color="#fbbf24" />
               </div>
+              {hasResult && (
+                <p className="mt-2 text-[11px] text-emerald-300">
+                  Score final {event.finalHomeScore}-{event.finalAwayScore} · bons pronostics en vert
+                </p>
+              )}
               <ul className="mt-3 grid max-h-40 gap-1 overflow-auto text-sm">
-                {predictions.slice(0, 12).map((p) => (
-                  <li
-                    key={p.id}
-                    className="flex justify-between rounded bg-white/[0.03] px-2 py-1"
-                  >
-                    <span className="truncate text-slate-300">{p.pseudo}</span>
-                    <span className="font-bold">
-                      {p.predicted_home} - {p.predicted_away}
-                    </span>
-                  </li>
-                ))}
+                {predictions.slice(0, 12).map((p) => {
+                  const correct =
+                    hasResult &&
+                    p.predicted_home === event.finalHomeScore &&
+                    p.predicted_away === event.finalAwayScore;
+                  return (
+                    <li
+                      key={p.id}
+                      className={`flex justify-between rounded px-2 py-1 ${
+                        correct
+                          ? "bg-emerald-500/20 text-emerald-100"
+                          : "bg-white/[0.03] text-slate-300"
+                      }`}
+                    >
+                      <span className="truncate">
+                        {correct && "✅ "}
+                        {p.pseudo}
+                      </span>
+                      <span className="font-bold">
+                        {p.predicted_home} - {p.predicted_away}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </>
           ) : (
             <p className="mt-3 text-sm text-slate-500">
-              Sois le premier a pronostiquer ce match.
+              Sois le premier à pronostiquer ce match.
             </p>
           )}
         </div>

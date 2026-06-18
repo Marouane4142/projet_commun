@@ -7,8 +7,9 @@
 --   * g1a_predictions : pronostics des supporters sur les evenements
 --
 -- Securite : Row Level Security activee partout. Un utilisateur ne peut ecrire
--- que ses propres lignes. Le role "gerant" ne peut PAS etre auto-attribue : il
--- s'obtient via la fonction SECURITY DEFINER g1a_claim_gerant(code).
+-- que ses propres lignes. Le role "gerant" ne peut PAS etre auto-attribue : un
+-- gerant existant promeut les autres via la fonction SECURITY DEFINER
+-- g1a_set_role(). Le 1er gerant est designe par le bloc BOOTSTRAP (section 2.bis).
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
@@ -67,31 +68,46 @@ with check (auth.uid() = id);
 revoke update (role) on public.g1a_profiles from anon, authenticated;
 
 -- ----------------------------------------------------------------------------
--- 2) Promotion au role "gerant" via code d'acces (anti auto-promotion)
---    Change le code ci-dessous puis garde-le secret.
+-- 2) Gestion des roles : un GERANT peut promouvoir / retrograder d'autres comptes
+--    (un simple client ne peut JAMAIS se promouvoir lui-meme).
 -- ----------------------------------------------------------------------------
-create or replace function public.g1a_claim_gerant(p_code text)
+drop function if exists public.g1a_claim_gerant(text);
+
+create or replace function public.g1a_set_role(p_target uuid, p_role text)
 returns text
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  v_secret constant text := 'FANBAR-GERANT-2026';
 begin
-  if auth.uid() is null then
-    raise exception 'Authentification requise';
+  -- Seul un gerant peut changer un role.
+  if not exists (
+    select 1 from public.g1a_profiles
+    where id = auth.uid() and role = 'gerant'
+  ) then
+    raise exception 'Action reservee au gerant';
   end if;
-  if p_code is distinct from v_secret then
-    return 'invalid';
+
+  if p_role not in ('client', 'gerant') then
+    raise exception 'Role invalide';
   end if;
-  update public.g1a_profiles set role = 'gerant' where id = auth.uid();
-  return 'gerant';
+
+  update public.g1a_profiles set role = p_role where id = p_target;
+  return p_role;
 end;
 $$;
 
-revoke all on function public.g1a_claim_gerant(text) from public;
-grant execute on function public.g1a_claim_gerant(text) to authenticated;
+revoke all on function public.g1a_set_role(uuid, text) from public;
+grant execute on function public.g1a_set_role(uuid, text) to authenticated;
+
+-- ----------------------------------------------------------------------------
+-- 2.bis) BOOTSTRAP : designer le compte gerant predefini.
+--   1. Cree d'abord ce compte via la page /register du site.
+--   2. Remplace l'email ci-dessous par celui de ce compte, puis execute :
+-- ----------------------------------------------------------------------------
+update public.g1a_profiles
+set role = 'gerant'
+where id = (select id from auth.users where email = 'marouane4142@gmail.com');
 
 -- ----------------------------------------------------------------------------
 -- 3) Pronostics supporters sur les evenements FanBar
@@ -199,3 +215,74 @@ values
   ('France vs Senegal 3-1 - Resume', '8I2s_hs4TUU', 'France vs Senegal', 'resume', '2026-06-16T20:00:00Z'),
   ('France 3-1 Senegal - En direct du resume', 'CZ2CdOyXSho', 'France vs Senegal', 'resume', '2026-06-16T19:30:00Z')
 on conflict (youtube_id) do nothing;
+
+-- ----------------------------------------------------------------------------
+-- 5) Alias des sujets ethylotest : un gerant peut renommer "Personne 3" en
+--    "Lucas Liger". Lecture publique, ecriture reservee aux gerants.
+-- ----------------------------------------------------------------------------
+create table if not exists public.g1a_subject_aliases (
+  subject_id text primary key,
+  alias      text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.g1a_subject_aliases enable row level security;
+
+drop policy if exists "g1a_aliases read" on public.g1a_subject_aliases;
+create policy "g1a_aliases read"
+on public.g1a_subject_aliases for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "g1a_aliases write gerant" on public.g1a_subject_aliases;
+create policy "g1a_aliases write gerant"
+on public.g1a_subject_aliases for all
+to authenticated
+using (
+  exists (select 1 from public.g1a_profiles p where p.id = auth.uid() and p.role = 'gerant')
+)
+with check (
+  exists (select 1 from public.g1a_profiles p where p.id = auth.uid() and p.role = 'gerant')
+);
+
+-- ----------------------------------------------------------------------------
+-- 5.bis) Liaison compte <-> sujet ethylotest : un gerant associe une personne
+--    testee a un compte, qui pourra alors consulter SES stats d'alcoolemie.
+-- ----------------------------------------------------------------------------
+create table if not exists public.g1a_subject_links (
+  subject_id text primary key,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists g1a_subject_links_user_idx on public.g1a_subject_links (user_id);
+
+alter table public.g1a_subject_links enable row level security;
+
+drop policy if exists "g1a_links read" on public.g1a_subject_links;
+create policy "g1a_links read"
+on public.g1a_subject_links for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "g1a_links write gerant" on public.g1a_subject_links;
+create policy "g1a_links write gerant"
+on public.g1a_subject_links for all
+to authenticated
+using (
+  exists (select 1 from public.g1a_profiles p where p.id = auth.uid() and p.role = 'gerant')
+)
+with check (
+  exists (select 1 from public.g1a_profiles p where p.id = auth.uid() and p.role = 'gerant')
+);
+
+-- ----------------------------------------------------------------------------
+-- 6) Statistiques capturees par evenement (classements de l'historique).
+--    Renseignees automatiquement a la cloture d'un evenement.
+-- ----------------------------------------------------------------------------
+alter table public.g1a_events add column if not exists stat_avg_sound numeric;
+alter table public.g1a_events add column if not exists stat_zone_a_sound numeric;
+alter table public.g1a_events add column if not exists stat_zone_b_sound numeric;
+alter table public.g1a_events add column if not exists stat_avg_temperature numeric;
+alter table public.g1a_events add column if not exists stat_avg_alcohol numeric;
+alter table public.g1a_events add column if not exists stat_peak_affluence integer;

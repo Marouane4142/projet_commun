@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stopBridgeEvent } from "@/lib/cardBridgeService";
 import { getEventById, updateEventStatus } from "@/lib/eventService";
+import { requireGerant } from "@/lib/authGuard";
 import type { FanEventStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +28,9 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  const guard = await requireGerant();
+  if (!guard.ok) return guard.response;
+
   const { id } = await context.params;
   const body = (await request.json()) as {
     status?: unknown;

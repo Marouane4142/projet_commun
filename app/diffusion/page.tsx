@@ -66,10 +66,10 @@ export default async function DiffusionPage() {
         <p className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-rose-300">
           <Clapperboard size={14} /> Diffusion Coupe du Monde 2026
         </p>
-        <h1 className="mt-2 text-3xl font-black">Les matchs sur grand ecran</h1>
+        <h1 className="mt-2 text-3xl font-black">Les matchs sur grand écran</h1>
         <p className="mt-2 max-w-2xl text-slate-300">
-          Resumes et temps forts officiels de la Coupe du Monde 2026, diffuses
-          directement dans la FanBar (lecture integree, aucune redirection).
+          Résumés et temps forts de la Coupe du Monde 2026, diffusés directement
+          dans la FanBar (lecture intégrée, aucune redirection).
         </p>
       </section>
 
@@ -81,7 +81,7 @@ export default async function DiffusionPage() {
 
       {fallback && gerant && (
         <p className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">
-          Selection par defaut. Ajoute tes propres diffusions avec le bouton
+          Sélection par défaut. Ajoute tes propres diffusions avec le bouton
           ci-dessus pour personnaliser la programmation.
         </p>
       )}
@@ -89,7 +89,7 @@ export default async function DiffusionPage() {
       {featured && (
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-400">
-            <Radio size={15} className="text-rose-300" /> A la une
+            <Radio size={15} className="text-rose-300" /> À la une
           </h2>
           <div className="mx-auto max-w-4xl">
             <VideoFrame broadcast={featured} primary />
@@ -100,7 +100,7 @@ export default async function DiffusionPage() {
       {rest.length > 0 && (
         <section>
           <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-400">
-            Tous les resumes
+            Tous les résumés
           </h2>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {rest.map((b) => (

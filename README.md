@@ -1,4 +1,4 @@
-# FanBar Arena — Régie connectée Coupe du Monde 2026
+# FanBar Arena - Régie connectée Coupe du Monde 2026
 
 Application Next.js fullstack pour le **projet commun** (groupe **G1A**, capteur de
 **son**). Le scénario : un bar de supporters diffuse la Coupe du Monde 2026. Le site
@@ -34,17 +34,17 @@ FOOTBALL_API_KEY="..."
 FOOTBALL_SEASON="2026"
 ```
 
-## Base de données — à exécuter une fois dans Supabase SQL Editor
+## Base de données - à exécuter une fois dans Supabase SQL Editor
 
 Dans l'ordre :
 
-1. `supabase-sound-policies.sql` — table `g1a_sound` (déjà en place).
-2. `supabase-events-policies.sql` — table `g1a_events`.
-3. **`supabase-g1a-auth.sql`** — **nouveau** : comptes, pronostics, diffusions.
+1. `supabase-sound-policies.sql` - table `g1a_sound` (déjà en place).
+2. `supabase-events-policies.sql` - table `g1a_events`.
+3. **`supabase-g1a-auth.sql`** - **nouveau** : comptes, pronostics, diffusions.
    Crée `g1a_profiles`, `g1a_predictions`, `g1a_broadcasts` (avec RLS),
    la fonction de promotion gérant et un seed de résumés Coupe du Monde 2026
    (chaîne L'Équipe, disponibles en France).
-4. **`supabase-crossgroup-read.sql`** — **nouveau** : ajoute une policy de
+4. **`supabase-crossgroup-read.sql`** - **nouveau** : ajoute une policy de
    LECTURE seule pour `anon`/`authenticated` sur les capteurs de G1D
    (`g1d_mq3_measurements`) et G1E (`g1e_measurements`), qui ne les exposaient
    pas encore. Indispensable pour afficher alcoolémie + température/humidité.
@@ -73,7 +73,7 @@ groupes) :
 
 | Groupe | Table                     | Donnée exploitée                              |
 | ------ | ------------------------- | --------------------------------------------- |
-| G1A    | `g1a_sound`               | Niveau sonore (dB) par carte — **notre capteur** |
+| G1A    | `g1a_sound`               | Niveau sonore (dB) par carte - **notre capteur** |
 | G1B    | `g1b_compteur_personnes`  | Affluence (comptage ultrason entrées/sorties) |
 | G1C    | `g1c_smoke`               | Fumée / qualité de l'air (ppm, dernière valeur) |
 | G1D    | `g1d_mq3_measurements`    | Alcoolémie par sujet (MQ-3)                   |
@@ -88,23 +88,23 @@ dès que le groupe concerné publie des mesures (rafraîchissement temps réel).
 
 ## Pages
 
-- `/` — accueil + aperçu live du réseau de capteurs
-- `/regie` — **régie live** : cockpit multi-capteurs, indices composites (ambiance,
+- `/` - accueil + aperçu live du réseau de capteurs
+- `/regie` - **régie live** : cockpit multi-capteurs, indices composites (ambiance,
   fête, confort, sécurité), alertes, occupation, prévention alcoolémie. Mode éco.
-- `/dashboard` — duel des deux zones de supporters (son par carte) enrichi des
+- `/dashboard` - duel des deux zones de supporters (son par carte) enrichi des
   données salle (affluence G1B, air G1C)
-- `/diffusion` — résumés Coupe du Monde 2026 **intégrés** (iframe, sans redirection,
+- `/diffusion` - résumés Coupe du Monde 2026 **intégrés** (iframe, sans redirection,
   vidéos disponibles en France), gestion par le gérant
-- `/predictions` — pronostics des supporters (table `g1a_predictions`)
-- `/history` — événements terminés
-- `/events/new`, `/settings` — réservés au gérant
-- `/account` — profil, équipe favorite, accès gérant
-- `/about` — architecture, données partagées, sécurité / éco-conception / accessibilité
+- `/predictions` - pronostics des supporters (table `g1a_predictions`)
+- `/history` - événements terminés
+- `/events/new`, `/settings` - réservés au gérant
+- `/account` - profil, équipe favorite, accès gérant
+- `/about` - architecture, données partagées, sécurité / éco-conception / accessibilité
 
 ## API routes principales
 
-- `GET /api/ecosystem` — snapshot agrégé de tous les capteurs de la salle
-- `GET /api/dashboard` — duel de zones + contexte salle
+- `GET /api/ecosystem` - snapshot agrégé de tous les capteurs de la salle
+- `GET /api/dashboard` - duel de zones + contexte salle
 - `GET/POST /api/sound`, `GET /api/events`, etc. (voir `app/api/`)
 
 ## Bonus (critères du projet)

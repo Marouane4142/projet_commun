@@ -16,8 +16,8 @@ export default async function PredictionsPage() {
         </p>
         <h1 className="mt-2 text-3xl font-black">Donne ton score</h1>
         <p className="mt-2 max-w-2xl text-slate-300">
-          Pronostique le resultat des matchs diffuses a la FanBar et compare-toi a
-          la communaute. Les pronostics se ferment au coup d&apos;envoi.
+          Pronostique le résultat des matchs diffusés à la FanBar et compare-toi à
+          la communauté. Les pronostics se ferment une fois le match terminé.
         </p>
       </section>
 

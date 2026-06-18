@@ -59,26 +59,52 @@ function statusFromValue(value: number | null, type: "decibel" | "smoke" | "temp
 // --------------------------------------------------------------------------
 // G1A - son
 // --------------------------------------------------------------------------
+// Fenetre pendant laquelle une carte est consideree "presente / detectee".
+const SOUND_ACTIVE_WINDOW_MS = 12_000;
+
 async function buildSoundDomain(client: any): Promise<EcoDomain> {
-  const { rows, count, ok } = await safeSelect<{ measured_at: string; db_value: number }>(
+  const { rows, count, ok } = await safeSelect<{
+    measured_at: string;
+    db_value: number;
+    electronic_card: number | null;
+  }>(
     client,
     "g1a_sound",
-    "measured_at, db_value",
-    (q) => q.order("measured_at", { ascending: false }).limit(HISTORY),
+    "measured_at, db_value, electronic_card",
+    (q) => q.order("measured_at", { ascending: false }).limit(120),
   );
-  const latest = rows[0]?.db_value ?? null;
+
+  // Ambiance generale = derniere valeur de la PLUS PETITE carte detectee
+  // recemment (carte 1 prioritaire ; sinon 2, puis 3...). Si la carte 1
+  // revient, elle reprend la main automatiquement.
+  const newest = rows[0] ? new Date(rows[0].measured_at).getTime() : 0;
+  const activeCards = new Set<number>();
+  for (const r of rows) {
+    if (
+      typeof r.electronic_card === "number" &&
+      newest - new Date(r.measured_at).getTime() <= SOUND_ACTIVE_WINDOW_MS
+    ) {
+      activeCards.add(r.electronic_card);
+    }
+  }
+  const primaryCard = activeCards.size > 0 ? Math.min(...activeCards) : null;
+  const cardRows = primaryCard != null
+    ? rows.filter((r) => r.electronic_card === primaryCard)
+    : rows;
+
+  const latest = cardRows[0]?.db_value ?? null;
   return {
     key: "sound",
     label: "Ambiance sonore",
-    sensor: "Micro MAX4466",
-    status: ok && rows.length > 0 ? "live" : ok ? "waiting" : "error",
+    sensor: primaryCard != null ? `Micro MAX4466 · carte ${primaryCard}` : "Micro MAX4466",
+    status: ok && cardRows.length > 0 ? "live" : ok ? "waiting" : "error",
     value: latest,
     unit: "dB",
-    measuredAt: rows[0]?.measured_at ?? null,
+    measuredAt: cardRows[0]?.measured_at ?? null,
     readingStatus: statusFromValue(latest, "decibel"),
     rowCount: count,
-    history: toPoints(rows.map((r) => ({ t: r.measured_at, v: r.db_value }))),
-    note: "Notre capteur : intensite sonore des supporters.",
+    history: toPoints(cardRows.slice(0, HISTORY).map((r) => ({ t: r.measured_at, v: r.db_value }))),
+    note: "Intensité sonore en direct.",
   };
 }
 
@@ -115,7 +141,7 @@ function buildAffluenceDomain(
   return {
     key: "affluence",
     label: "Affluence",
-    sensor: "Compteur ultrason (entree / sortie)",
+    sensor: "Compteur ultrason (entrée / sortie)",
     status: ok && rows.length > 0 ? "live" : ok ? "waiting" : "error",
     value: latest,
     unit: "pers.",
@@ -123,7 +149,7 @@ function buildAffluenceDomain(
     readingStatus,
     rowCount: count,
     history: toPoints(rows.map((r) => ({ t: r.created_at, v: r.nb_personnes ?? 0 }))),
-    note: "Entrees et sorties comptees en temps reel.",
+    note: "Entrées et sorties comptées en temps réel.",
   };
 }
 
@@ -140,8 +166,8 @@ async function buildAirDomain(client: any): Promise<EcoDomain> {
   const latest = rows[0]?.ppm ?? null;
   return {
     key: "air",
-    label: "Qualite de l'air",
-    sensor: "Capteur de fumee (ppm)",
+    label: "Qualité de l'air",
+    sensor: "Capteur de fumée (ppm)",
     status: ok && rows.length > 0 ? "live" : ok ? "waiting" : "error",
     value: latest,
     unit: "ppm",
@@ -149,7 +175,7 @@ async function buildAirDomain(client: any): Promise<EcoDomain> {
     readingStatus: statusFromValue(latest, "smoke"),
     rowCount: count,
     history: toPoints(rows.map((r) => ({ t: r.measured_at, v: r.ppm }))),
-    note: "Detection de fumee, mesure temps reel.",
+    note: "Détection de fumée, mesure en temps réel.",
   };
 }
 
@@ -200,24 +226,39 @@ function buildAlcohol(data: Awaited<ReturnType<typeof fetchAlcohol>>): {
     : null;
   const overLimit = perSubject.filter((s) => s.level >= ALCOHOL_LIMIT).length;
 
+  // Moyenne "foule" : dernier test de chaque personne dans l'heure precedant le
+  // dernier test global. Ex : si la derniere personne testee l'a ete a 23h00, on
+  // moyenne tous ceux testes entre 22h00 et 23h00 (un releve par personne).
+  const latestTime = rows[0] ? new Date(rows[0].measured_at).getTime() : 0;
+  const windowStart = latestTime - 3_600_000;
+  const inWindow = perSubject.filter(
+    (s) => new Date(s.measuredAt).getTime() >= windowStart,
+  );
+  const recentCount = inWindow.length;
+  const recentAverage = recentCount
+    ? Math.round((inWindow.reduce((sum, s) => sum + s.level, 0) / recentCount) * 100) / 100
+    : null;
+
+  // La valeur affichee (dashboard/regie) = cette moyenne foule sur 1h.
+  const displayed = recentAverage ?? latest;
   let readingStatus: ReadingStatus | null = null;
-  if (latest != null) {
+  if (displayed != null) {
     readingStatus =
-      latest >= ALCOHOL_LIMIT * 1.6 ? "critical" : latest >= ALCOHOL_LIMIT ? "alert" : latest >= ALCOHOL_LIMIT * 0.5 ? "warning" : "ok";
+      displayed >= ALCOHOL_LIMIT * 1.6 ? "critical" : displayed >= ALCOHOL_LIMIT ? "alert" : displayed >= ALCOHOL_LIMIT * 0.5 ? "warning" : "ok";
   }
 
   const domain: EcoDomain = {
     key: "alcohol",
-    label: "Alcoolemie",
-    sensor: "Ethylotest MQ-3 (par sujet)",
+    label: "Alcoolémie",
+    sensor: "Éthylotest MQ-3 (par personne)",
     status: ok && rows.length > 0 ? "live" : ok ? "waiting" : "error",
-    value: latest,
+    value: displayed,
     unit: "g/L",
     measuredAt: rows[0]?.measured_at ?? null,
     readingStatus,
     rowCount: count,
     history: toPoints(rows.slice(0, HISTORY).map((r) => ({ t: r.measured_at, v: r.alcohol_level }))),
-    note: "Prevention : mesure par personne avant le depart.",
+    note: "Prévention : mesure par personne avant le départ.",
   };
 
   const insights: AlcoholInsights = {
@@ -226,6 +267,8 @@ function buildAlcohol(data: Awaited<ReturnType<typeof fetchAlcohol>>): {
     latest,
     max,
     average,
+    recentAverage,
+    recentCount,
     overLimit,
     limit: ALCOHOL_LIMIT,
     perSubject: perSubject.slice(0, 10),
@@ -273,8 +316,8 @@ function buildEnvDomains(data: Awaited<ReturnType<typeof fetchEnv>>): {
 
   const temperature: EcoDomain = {
     key: "temperature",
-    label: "Temperature",
-    sensor: "Capteur temperature",
+    label: "Température",
+    sensor: "Capteur de température",
     status: ok && tempRows.length > 0 ? "live" : ok ? "waiting" : "error",
     value: tempLatest,
     unit: "°C",
@@ -282,13 +325,13 @@ function buildEnvDomains(data: Awaited<ReturnType<typeof fetchEnv>>): {
     readingStatus: statusFromValue(tempLatest, "temperature"),
     rowCount: tempRows.length || null,
     history: toPoints(tempRows.map((r) => ({ t: r.created_at, v: r.value }))),
-    note: "Temperature de la salle, en continu.",
+    note: "Température de la salle, en continu.",
   };
 
   const humidity: EcoDomain = {
     key: "humidity",
-    label: "Humidite",
-    sensor: "Capteur humidite",
+    label: "Humidité",
+    sensor: "Capteur d'humidité",
     status: ok && humRows.length > 0 ? "live" : ok ? "waiting" : "error",
     value: humLatest,
     unit: "%",
@@ -296,7 +339,7 @@ function buildEnvDomains(data: Awaited<ReturnType<typeof fetchEnv>>): {
     readingStatus: humStatus,
     rowCount: humRows.length || null,
     history: toPoints(humRows.map((r) => ({ t: r.created_at, v: r.value }))),
-    note: "Taux d'humidite de la salle, en continu.",
+    note: "Taux d'humidité de la salle, en continu.",
   };
 
   return { temperature, humidity };
@@ -305,9 +348,10 @@ function buildEnvDomains(data: Awaited<ReturnType<typeof fetchEnv>>): {
 // --------------------------------------------------------------------------
 // Indices composites + alertes cross-groupes
 // --------------------------------------------------------------------------
+// Echelle de l'indice d'ambiance : 40 dB (calme) -> 0, 115 dB (survolte) -> 100.
 function soundToScore(db: number | null): number | null {
   if (db == null) return null;
-  return Math.round(clamp(((db - 40) / 60) * 100));
+  return Math.round(clamp(((db - 40) / (115 - 40)) * 100));
 }
 
 function buildIndices(
@@ -345,10 +389,10 @@ function buildIndices(
   }
 
   return [
-    { key: "ambiance", label: "Indice d'ambiance", value: ambiance, caption: "Niveau sonore" },
-    { key: "fete", label: "Indice de fete", value: fete, caption: "Son et affluence" },
-    { key: "confort", label: "Indice de confort", value: confort, caption: "Affluence, air, temperature" },
-    { key: "securite", label: "Indice de securite", value: securite, caption: "Air et affluence" },
+    { key: "ambiance", label: "Ambiance sonore", value: ambiance, caption: "0 calme → 100 survolté" },
+    { key: "fete", label: "Esprit festif", value: fete, caption: "Son + affluence" },
+    { key: "confort", label: "Confort", value: confort, caption: "Affluence · air · température" },
+    { key: "securite", label: "Sécurité", value: securite, caption: "Air + affluence" },
   ];
 }
 
@@ -368,8 +412,8 @@ function buildAlerts(
       severity: air.value >= 45 ? "critical" : "alert",
       message:
         air.value >= 45
-          ? `Fumee critique (${air.value} ppm) : evacuer et aerer.`
-          : `Fumee elevee (${air.value} ppm) : aerer la salle.`,
+          ? `Fumée critique (${air.value} ppm) : évacuer et aérer.`
+          : `Fumée élevée (${air.value} ppm) : aérer la salle.`,
     });
   }
 
@@ -380,8 +424,8 @@ function buildAlerts(
       severity: occupancy.ratio >= 1 ? "critical" : "alert",
       message:
         occupancy.ratio >= 1
-          ? `Capacite depassee (${occupancy.current}/${occupancy.capacity}) : stopper les entrees.`
-          : `Affluence forte (${occupancy.current}/${occupancy.capacity}) : surveiller les entrees.`,
+          ? `Capacité dépassée (${occupancy.current}/${occupancy.capacity}) : stopper les entrées.`
+          : `Affluence forte (${occupancy.current}/${occupancy.capacity}) : surveiller les entrées.`,
     });
   }
 
@@ -390,7 +434,7 @@ function buildAlerts(
       id: "sound-high",
       domain: "sound",
       severity: sound.value >= 100 ? "critical" : "warning",
-      message: `Niveau sonore eleve (${sound.value} dB) : risque auditif prolonge.`,
+      message: `Niveau sonore élevé (${sound.value} dB) : risque auditif prolongé.`,
     });
   }
 
@@ -399,7 +443,7 @@ function buildAlerts(
       id: "alcohol-over",
       domain: "alcohol",
       severity: "alert",
-      message: `${alcohol.overLimit} supporter(s) au-dessus de ${alcohol.limit} g/L : prevoir un retour securise.`,
+      message: `${alcohol.overLimit} personne(s) au-dessus de ${alcohol.limit} g/L : prévoir un retour sécurisé.`,
     });
   }
 
@@ -408,7 +452,7 @@ function buildAlerts(
       id: "temp-high",
       domain: "temperature",
       severity: temperature.value >= 32 ? "alert" : "warning",
-      message: `Chaleur elevee (${temperature.value} C) : renforcer la ventilation.`,
+      message: `Chaleur élevée (${temperature.value} °C) : renforcer la ventilation.`,
     });
   }
 

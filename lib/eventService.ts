@@ -1,4 +1,5 @@
 import { anonSensorClient } from "./sensorClients";
+import { computeEventStats } from "./eventStats";
 import type { FanEvent, FanEventStatus, MatchOption } from "./types";
 
 const tableName = "g1a_events";
@@ -21,6 +22,12 @@ type SupabaseEventRow = {
   finished_at: string | null;
   created_at: string;
   updated_at: string;
+  stat_avg_sound: number | null;
+  stat_zone_a_sound: number | null;
+  stat_zone_b_sound: number | null;
+  stat_avg_temperature: number | null;
+  stat_avg_alcohol: number | null;
+  stat_peak_affluence: number | null;
 };
 
 export type CreateEventInput = {
@@ -82,6 +89,25 @@ export async function getEventById(id?: string | null) {
 
 export async function createEvent(input: CreateEventInput) {
   const supabase = anonSensorClient();
+
+  // Anti-doublon : un match deja utilise (evenement en cours ou termine dans
+  // l'historique) ne peut pas etre reprogramme.
+  const { data: existing } = await supabase
+    .from(tableName)
+    .select("id, status")
+    .eq("match_id", input.match.id)
+    .in("status", ["planned", "active", "finished"])
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    const status = (existing[0] as { status: string }).status;
+    throw new Error(
+      status === "finished"
+        ? "Ce match figure déjà dans l'historique : impossible de le reprogrammer."
+        : "Un événement existe déjà pour ce match.",
+    );
+  }
+
   const { data, error } = await supabase
     .from(tableName)
     .insert({
@@ -124,9 +150,24 @@ export async function updateEventStatus(input: {
   };
 
   if (input.status === "finished") {
-    payload.finished_at = new Date().toISOString();
+    const finishedAt = new Date().toISOString();
+    payload.finished_at = finishedAt;
     payload.final_home_score = input.finalHomeScore ?? null;
     payload.final_away_score = input.finalAwayScore ?? null;
+
+    // Capture des statistiques sur toute la duree de l'evenement (classements).
+    const existing = await getEventById(input.id);
+    if (existing) {
+      const cardA = parseCardId(existing.zoneA.card) ?? null;
+      const cardB = parseCardId(existing.zoneB.card) ?? null;
+      const stats = await computeEventStats(existing.createdAt, finishedAt, cardA, cardB);
+      payload.stat_avg_sound = stats.avgSound;
+      payload.stat_zone_a_sound = stats.zoneASound;
+      payload.stat_zone_b_sound = stats.zoneBSound;
+      payload.stat_avg_temperature = stats.avgTemperature;
+      payload.stat_avg_alcohol = stats.avgAlcohol;
+      payload.stat_peak_affluence = stats.peakAffluence;
+    }
   }
 
   const supabase = anonSensorClient();
@@ -185,6 +226,12 @@ const eventSelect = [
   "finished_at",
   "created_at",
   "updated_at",
+  "stat_avg_sound",
+  "stat_zone_a_sound",
+  "stat_zone_b_sound",
+  "stat_avg_temperature",
+  "stat_avg_alcohol",
+  "stat_peak_affluence",
 ].join(", ");
 
 function mapEvent(row: SupabaseEventRow): FanEvent {
@@ -194,7 +241,7 @@ function mapEvent(row: SupabaseEventRow): FanEvent {
     id: row.id,
     name: row.name,
     matchId: row.match_id,
-    competition: row.competition ?? "Competition",
+    competition: normalizeCompetition(row.competition),
     homeTeam: row.home_team,
     awayTeam: row.away_team,
     kickoffAt,
@@ -218,7 +265,21 @@ function mapEvent(row: SupabaseEventRow): FanEvent {
     finishedAt: row.finished_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    stats: {
+      avgSound: row.stat_avg_sound,
+      zoneASound: row.stat_zone_a_sound,
+      zoneBSound: row.stat_zone_b_sound,
+      avgTemperature: row.stat_avg_temperature,
+      avgAlcohol: row.stat_avg_alcohol,
+      peakAffluence: row.stat_peak_affluence,
+    },
   };
+}
+
+function normalizeCompetition(competition: string | null): string {
+  if (!competition) return "Compétition";
+  if (/world cup/i.test(competition)) return "Coupe du Monde";
+  return competition;
 }
 
 function parseCardId(card?: string) {

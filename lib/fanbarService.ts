@@ -6,22 +6,18 @@ import {
 } from "./scores";
 import { getCurrentMatch, isMatchInProgress } from "./footballApiService";
 import { eventToZones, getEventById } from "./eventService";
-import { getEcosystemSnapshot } from "./ecosystemService";
 import { sensors } from "./mockData";
 import { createSupabaseSoundReading, getSupabaseSoundReadings } from "./soundService";
 import type {
   Alert,
   BarZone,
   DashboardData,
-  DashboardVenue,
   LatestMetrics,
   MetricType,
   Sensor,
   SensorReading,
   ZoneScore,
 } from "./types";
-
-type VenueContext = { people: number | null; smoke: number | null };
 
 export async function getAllReadings(limit = 100, eventZones?: BarZone[]) {
   const supabaseSound = await getSupabaseSoundReadings(limit);
@@ -34,7 +30,7 @@ export async function getAllReadings(limit = 100, eventZones?: BarZone[]) {
     .slice(0, limit);
 }
 
-export function mapReadingsToEventZones(readings: SensorReading[], eventZones: BarZone[]) {
+function mapReadingsToEventZones(readings: SensorReading[], eventZones: BarZone[]) {
   const zoneByCard = new Map<number, number>();
 
   for (const zone of eventZones) {
@@ -73,42 +69,16 @@ export async function getDashboardData(input?: {
   const event = input?.eventId ? await getEventById(input.eventId) : null;
   const matchId = event?.matchId ?? input?.matchId;
   const eventZones = eventToZones(event);
-  const [match, allReadings, eco] = await Promise.all([
+  const [match, allReadings] = await Promise.all([
     getCurrentMatch(matchId),
     getAllReadings(240, eventZones),
-    getEcosystemSnapshot(),
   ]);
   const readings = event ? keepReadingsAfter(allReadings, event.createdAt) : allReadings;
 
-  const affluenceDomain = eco.domains.find((d) => d.key === "affluence");
-  const airDomain = eco.domains.find((d) => d.key === "air");
-  const venueContext: VenueContext = {
-    people: eco.occupancy.current,
-    smoke: airDomain?.value ?? null,
-  };
-  const venue: DashboardVenue = {
-    occupancy: {
-      current: eco.occupancy.current,
-      capacity: eco.occupancy.capacity,
-      ratio: eco.occupancy.ratio,
-    },
-    affluence: {
-      value: affluenceDomain?.value ?? null,
-      unit: affluenceDomain?.unit ?? "pers.",
-      status: affluenceDomain?.readingStatus ?? null,
-      live: affluenceDomain?.status === "live",
-    },
-    air: {
-      value: airDomain?.value ?? null,
-      unit: airDomain?.unit ?? "ppm",
-      status: airDomain?.readingStatus ?? null,
-      live: airDomain?.status === "live",
-    },
-    indices: eco.indices,
-    alerts: eco.alerts,
-  };
-
-  const zoneScores = eventZones.map((zone) => buildZoneScore(zone, readings, venueContext));
+  // Le duel des zones se joue uniquement sur le son. Le reste de l'ecosysteme
+  // (affluence, air, alcool, climat) est affiche par <EcosystemLive/>, qui
+  // interroge /api/ecosystem directement : pas besoin de le recalculer ici.
+  const zoneScores = eventZones.map((zone) => buildZoneScore(zone, readings));
   const winner = zoneScores.reduce<ZoneScore | null>((current, zone) => {
     if (zone.ambianceScore === null) return current;
     if (!current || current.ambianceScore === null || zone.ambianceScore > current.ambianceScore) {
@@ -123,7 +93,6 @@ export async function getDashboardData(input?: {
     match,
     zones: zoneScores,
     winner,
-    venue,
     globalSummary: buildGlobalSummary(zoneScores),
     sources: {
       matchLive: match.source === "api" && isMatchInProgress(match.status),
@@ -178,11 +147,7 @@ export async function createReading(input: {
   );
 }
 
-function buildZoneScore(
-  zone: BarZone,
-  readings: SensorReading[],
-  venue?: VenueContext,
-): ZoneScore {
+function buildZoneScore(zone: BarZone, readings: SensorReading[]): ZoneScore {
   const zoneReadings = readings.filter((reading) => reading.zoneId === zone.id);
   const latest = buildLatestMetrics(zoneReadings);
   const liveMetrics = getLiveMetrics(latest);
@@ -191,21 +156,16 @@ function buildZoneScore(
     .filter((reading) => reading.type === "decibel")
     .map((reading) => reading.value);
   const soundPeak = soundValues.length > 0 ? Math.max(...soundValues) : null;
-  // Affluence (G1B) et fumee (G1C) sont des mesures niveau salle : on les
-  // partage entre les deux zones pour enrichir les scores quand la zone n'a
-  // pas sa propre valeur.
-  const peopleCount = latest.people_count?.value ?? venue?.people ?? undefined;
-  const smokeValue = latest.smoke?.value ?? venue?.smoke ?? undefined;
   const ambianceScore = calculateAmbianceScore({
     decibels: latest.decibel?.value,
-    peopleCount,
+    peopleCount: latest.people_count?.value,
     maxCapacity: zone.maxCapacity,
     recentSoundPeak: soundPeak ?? undefined,
   });
   const comfortScore = calculateComfortScore({
     temperature: latest.temperature?.value,
-    peopleCount,
-    smoke: smokeValue,
+    peopleCount: latest.people_count?.value,
+    smoke: latest.smoke?.value,
     gas: latest.gas?.value,
     maxCapacity: zone.maxCapacity,
   });

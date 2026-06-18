@@ -22,6 +22,11 @@ import type {
   ReadingStatus,
 } from "@/lib/types";
 
+// Capteurs dont l'horodatage est stocke en VRAI UTC (notre son + climat G1E) :
+// on les convertit en heure de Paris. Les autres groupes stockent deja l'heure
+// locale (etiquetee UTC) -> on les affiche tels quels.
+const UTC_TRUE_DOMAINS = new Set<EcoDomainKey>(["sound", "temperature", "humidity"]);
+
 const DOMAIN_ICON: Record<EcoDomainKey, typeof Volume2> = {
   sound: Volume2,
   affluence: Users,
@@ -69,7 +74,7 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
   }, []);
 
   useEffect(() => {
-    const interval = ecoMode ? 15000 : 3000;
+    const interval = ecoMode ? 15000 : 2000;
     let cancelled = false;
 
     const loop = async () => {
@@ -102,11 +107,11 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
       <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-black">
-            <Radio className="text-emerald-300" /> Regie connectee
+            <Radio className="text-emerald-300" /> Régie connectée
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Toute la salle en un coup d&apos;oeil : les capteurs de chaque groupe
-            alimentent la meme regie.
+            Tout le bar en un coup d&apos;œil : chaque capteur alimente la même
+            régie en temps réel.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -131,10 +136,10 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
                 ? "border-emerald-400/40 bg-emerald-400/15 text-emerald-200"
                 : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10"
             }`}
-            title="Reduit la frequence de rafraichissement pour economiser energie et donnees"
+            title="Réduit la fréquence de rafraîchissement pour économiser énergie et données"
           >
             <Leaf size={14} />
-            Mode eco {ecoMode ? "ON" : "OFF"}
+            Mode éco {ecoMode ? "ON" : "OFF"}
           </button>
         </div>
       </section>
@@ -142,7 +147,7 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
       {/* Capteurs connectes */}
       <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
         <h2 className="text-xs font-black uppercase tracking-wide text-slate-400">
-          Capteurs connectes du bar
+          Capteurs connectés du bar
         </h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {domains.map((d) => (
@@ -160,7 +165,7 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
           ))}
         </div>
         <p className="mt-3 text-xs text-slate-500">
-          {liveCount} capteur(s) actif(s) en temps reel.
+          {liveCount} capteur(s) actif(s) en direct.
         </p>
       </section>
 
@@ -193,7 +198,7 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
       {/* Indices composites */}
       <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
         <h2 className="mb-5 text-sm font-black uppercase tracking-wide text-slate-400">
-          Indices composites (calcules en croisant les capteurs)
+          Indices composites (calculés en croisant les capteurs)
         </h2>
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {indices.map((idx) => (
@@ -231,51 +236,95 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
             <span>
               Taux : {occupancy.ratio != null ? Math.round(occupancy.ratio * 100) : "--"}%
             </span>
-            <span className="text-slate-500">Affluence en temps reel</span>
+            <span className="text-slate-500">Affluence en temps réel</span>
           </div>
           {(occupancy.flowIn != null || occupancy.flowOut != null) && (
             <div className="mt-3 flex gap-4 text-xs">
-              <span className="text-emerald-300">+{occupancy.flowIn ?? 0} entrees</span>
+              <span className="text-emerald-300">+{occupancy.flowIn ?? 0} entrées</span>
               <span className="text-rose-300">-{occupancy.flowOut ?? 0} sorties</span>
-              <span className="text-slate-500">(tendance recente)</span>
+              <span className="text-slate-500">(tendance récente)</span>
             </div>
           )}
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 lg:col-span-2">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-300">
-            <Wine size={16} /> Prevention alcoolemie
-          </h3>
-          <div className="mt-4 grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
-            <Stat label="Sujets testes" value={alcohol.subjects} />
-            <Stat label="Au-dessus limite" value={alcohol.overLimit} />
-            <Stat
-              label="Max (g/L)"
-              value={alcohol.max != null ? alcohol.max : 0}
-            />
-            <Stat label="Mesures" value={alcohol.total} />
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="flex items-center gap-2 text-sm font-bold text-slate-300">
+              <Wine size={16} /> Prévention alcoolémie
+            </h3>
+            <span className="text-[11px] text-slate-500">Limite légale : 0,5 g/L</span>
           </div>
-          {alcohol.perSubject.length > 0 ? (
-            <ul className="mt-4 grid gap-1 text-sm">
-              {alcohol.perSubject.slice(0, 4).map((s) => (
-                <li
-                  key={s.subjectId}
-                  className="flex items-center justify-between rounded-lg bg-white/[0.03] px-3 py-1.5"
-                >
-                  <span className="truncate text-slate-300">Sujet {s.subjectId}</span>
-                  <span
-                    className={`font-black ${
-                      s.level >= alcohol.limit ? "text-rose-300" : "text-emerald-300"
-                    }`}
+
+          {alcohol.subjects > 0 ? (
+            <>
+              {/* Chiffre actionnable */}
+              <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-2">
+                <div>
+                  <div
+                    className="text-4xl font-black"
+                    style={{ color: alcohol.overLimit > 0 ? "#f87171" : "#34d399" }}
                   >
-                    {s.level} g/L
-                  </span>
-                </li>
-              ))}
-            </ul>
+                    {alcohol.overLimit}
+                    <span className="text-lg text-slate-400"> / {alcohol.subjects}</span>
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    personne(s) au-dessus de la limite
+                  </div>
+                </div>
+                <div className="flex gap-5 text-sm">
+                  <div>
+                    <div className="font-black">{fmtAlcool(alcohol.recentAverage)}</div>
+                    <div className="text-[11px] text-slate-500">moyenne foule 1h (g/L)</div>
+                  </div>
+                  <div>
+                    <div className="font-black text-amber-300">{fmtAlcool(alcohol.max)}</div>
+                    <div className="text-[11px] text-slate-500">maxi (g/L)</div>
+                  </div>
+                  <div>
+                    <div className="font-black">{alcohol.total}</div>
+                    <div className="text-[11px] text-slate-500">mesures</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Répartition */}
+              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-emerald-400/20">
+                <div
+                  className="h-full rounded-full bg-rose-500"
+                  style={{ width: `${(alcohol.overLimit / alcohol.subjects) * 100}%` }}
+                />
+              </div>
+
+              {/* Détail par personne */}
+              <ul className="mt-4 grid gap-1 text-sm sm:grid-cols-2">
+                {alcohol.perSubject.slice(0, 6).map((s) => {
+                  const over = s.level >= alcohol.limit;
+                  return (
+                    <li
+                      key={s.subjectId}
+                      className="flex items-center justify-between rounded-lg bg-white/[0.03] px-3 py-1.5"
+                    >
+                      <span className="truncate text-slate-300">Personne {s.subjectId}</span>
+                      <span className="flex items-center gap-2">
+                        <span className={`font-black ${over ? "text-rose-300" : "text-emerald-300"}`}>
+                          {fmtAlcool(s.level)} g/L
+                        </span>
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-black uppercase ${
+                            over ? "bg-rose-500/20 text-rose-200" : "bg-emerald-500/20 text-emerald-200"
+                          }`}
+                        >
+                          {over ? "Au-dessus" : "OK"}
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           ) : (
             <p className="mt-4 text-xs text-slate-500">
-              Aucune mesure d&apos;alcoolemie pour l&apos;instant.
+              Aucune mesure d&apos;alcoolémie pour l&apos;instant.
             </p>
           )}
         </div>
@@ -291,16 +340,12 @@ export function RegieClient({ initial }: { initial: EcosystemSnapshot }) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-      <div className="text-2xl font-black">{value}</div>
-      <div className="text-[11px] text-slate-400">{label}</div>
-    </div>
-  );
+function fmtAlcool(value: number | null): string {
+  if (value == null) return "--";
+  return value.toFixed(2).replace(".", ",");
 }
 
-function SensorCard({ domain }: { domain: EcoDomain }) {
+export function SensorCard({ domain }: { domain: EcoDomain }) {
   const Icon = DOMAIN_ICON[domain.key];
   const color = domainColor(domain);
   const isLive = domain.status === "live";
@@ -346,10 +391,36 @@ function SensorCard({ domain }: { domain: EcoDomain }) {
 
       <p className="mt-3 text-xs text-slate-500">{domain.note}</p>
 
+      {isLive && domain.measuredAt && (
+        <p className="mt-2 text-[11px] text-slate-500">
+          Valeur du{" "}
+          <span className="font-semibold text-slate-400">
+            {fmtMoment(domain.measuredAt, UTC_TRUE_DOMAINS.has(domain.key) ? "Europe/Paris" : "UTC")}
+          </span>
+        </p>
+      )}
+
       <div className="mt-auto flex items-center justify-between pt-3 text-[11px] text-slate-600">
-        <span>{isLive ? "Temps reel" : "En attente de mesure"}</span>
+        <span>{isLive ? "Temps réel" : "En attente de mesure"}</span>
         {isLive && domain.rowCount != null && <span>{domain.rowCount} mesures</span>}
       </div>
     </article>
   );
+}
+
+/**
+ * Formate une date ISO en "JJ/MM/AAAA à HH:MM:SS".
+ *
+ * Subtilité de fuseau : notre capteur de son enregistre en VRAI UTC -> on le
+ * convertit en heure de Paris pour afficher l'heure réelle. Les autres groupes
+ * stockent deja leur heure locale (etiquetee UTC), donc on les affiche en UTC
+ * pour ne pas decaler une 2e fois.
+ */
+function fmtMoment(iso: string | null, timeZone: string = "UTC"): string {
+  if (!iso) return "--";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--";
+  const date = d.toLocaleDateString("fr-FR", { timeZone });
+  const time = d.toLocaleTimeString("fr-FR", { timeZone });
+  return `${date} à ${time}`;
 }

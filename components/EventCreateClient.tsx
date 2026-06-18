@@ -59,14 +59,14 @@ export function EventCreateClient() {
   const cardSelectionError = useMemo(() => {
     if (cardsLoading) return "Chargement des cartes...";
     if (cardsMessage) return cardsMessage;
-    if (selectableCards.length < 2) return "Deux cartes healthy et libres sont requises.";
-    if (!zoneACard || !zoneBCard) return "Selectionne une carte pour chaque equipe.";
+    if (selectableCards.length < 2) return "Deux cartes saines et libres sont requises.";
+    if (!zoneACard || !zoneBCard) return "Sélectionne une carte pour chaque équipe.";
     if (!zoneACardId || !zoneBCardId) return "Carte invalide.";
-    if (zoneACardId === zoneBCardId) return "Chaque equipe doit avoir une carte differente.";
+    if (zoneACardId === zoneBCardId) return "Chaque équipe doit avoir une carte différente.";
 
     const selectedIds = new Set(selectableCards.map((card) => card.id));
     if (!selectedIds.has(zoneACardId) || !selectedIds.has(zoneBCardId)) {
-      return "Une carte selectionnee n'est plus disponible.";
+      return "Une carte sélectionnée n'est plus disponible.";
     }
 
     return null;
@@ -162,7 +162,7 @@ export function EventCreateClient() {
 
   async function createEvent() {
     if (!selectedMatch) {
-      setError("Selectionne d'abord un match.");
+      setError("Sélectionne d'abord un match.");
       return;
     }
 
@@ -193,7 +193,7 @@ export function EventCreateClient() {
       const payload = (await response.json()) as { event?: FanEvent; error?: string };
 
       if (!response.ok || !payload.event) {
-        throw new Error(payload.error ?? "Creation impossible.");
+        throw new Error(payload.error ?? "Création impossible.");
       }
 
       if (!zoneACardId || !zoneBCardId) {
@@ -222,11 +222,11 @@ export function EventCreateClient() {
   return (
     <div className="space-y-5">
       <section className="rounded-lg border border-white/10 bg-white/[0.05] p-5">
-        <p className="text-xs font-black uppercase text-emerald-300">Creation d'evenement</p>
+        <p className="text-xs font-black uppercase text-emerald-300">Création d'événement</p>
         <h1 className="mt-2 text-4xl font-black text-white">Configurer un match live</h1>
         <p className="mt-3 max-w-3xl text-slate-400">
-          Choisis un vrai match, attribue chaque equipe a une zone, puis relie les
-          cartes electroniques aux zones de supporters.
+          Choisis un vrai match, attribue chaque équipe à une zone, puis relie les
+          cartes électroniques aux zones de supporters.
         </p>
       </section>
 
@@ -245,7 +245,7 @@ export function EventCreateClient() {
           </div>
 
           <label className="mt-5 block text-sm font-bold text-slate-300">
-            Nom de l'evenement
+            Nom de l'événement
             <input
               value={eventName}
               onChange={(event) => setEventName(event.target.value)}
@@ -289,7 +289,7 @@ export function EventCreateClient() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 text-amber-200">
               <CircuitBoard size={20} />
-              <p className="text-xs font-black uppercase">Cartes electroniques</p>
+              <p className="text-xs font-black uppercase">Cartes électroniques</p>
             </div>
             <button
               type="button"
@@ -344,7 +344,7 @@ export function EventCreateClient() {
             className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-400 px-5 font-black text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-45"
           >
             <CalendarPlus size={18} />
-            {saving ? "Creation..." : "Creer l'evenement"}
+            {saving ? "Création..." : "Créer l'événement"}
           </button>
         </article>
       </section>
@@ -434,7 +434,7 @@ function CardSelect({
         disabled={loading || options.length === 0}
         className="mt-2 w-full rounded-lg border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none focus:border-amber-300/50 disabled:opacity-45"
       >
-        <option value="">{loading ? "Chargement..." : "Selectionner une carte"}</option>
+        <option value="">{loading ? "Chargement..." : "Sélectionner une carte"}</option>
         {options.map((card) => (
           <option key={`${label}-${card.id}`} value={toCardValue(card)}>
             {card.label}
@@ -469,7 +469,7 @@ function CardHealthList({
   if (cards.length === 0) {
     return (
       <p className="mt-4 rounded-lg border border-amber-300/25 bg-amber-300/10 p-3 text-sm text-amber-100">
-        Aucune carte detectee par la passerelle locale.
+        Aucune carte détectée par la passerelle locale.
       </p>
     );
   }
@@ -522,20 +522,6 @@ function getCardId(cardValue: string) {
 
 function toCardValue(card: ElectronicCard) {
   return card.label;
-}
-
-function isCardSelectable(
-  value: string,
-  cards: ElectronicCard[],
-  blockedCardId: number | null,
-) {
-  const cardId = getCardId(value);
-
-  if (!cardId || cardId === blockedCardId) {
-    return false;
-  }
-
-  return cards.some((card) => card.id === cardId);
 }
 
 function getCardStatus(card: ElectronicCard) {
