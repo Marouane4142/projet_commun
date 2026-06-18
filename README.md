@@ -1,132 +1,195 @@
-# FanBar Arena - Régie connectée Coupe du Monde 2026
+# FanBar Arena
 
-Application Next.js fullstack pour le **projet commun** (groupe **G1A**, capteur de
-**son**). Le scénario : un bar de supporters diffuse la Coupe du Monde 2026. Le site
-agrège **les capteurs de toute la salle** via une base de données Supabase partagée,
-et propose comptes utilisateurs, régie temps réel, duel de zones, diffusion vidéo
-intégrée et pronostics.
+Régie connectée temps réel pour un bar de supporters pendant la **Coupe du Monde 2026**.  
+Le site agrège les capteurs de toute la salle via une base de données Supabase partagée et propose : comptes utilisateurs, régie live multi-capteurs, duel de zones, diffusion vidéo intégrée, pronostics, suivi d'alcoolémie par personne et gestion d'événements.
 
-> Notre groupe câble le capteur de son, mais le site exploite aussi en lecture les
-> capteurs des autres groupes (affluence, fumée, alcoolémie, température/humidité).
+> Notre groupe (G1A) câble le **capteur de son** ; le site exploite aussi en lecture les capteurs des autres groupes (affluence, fumée, alcoolémie, température/humidité).
 
-## Stack
+## Stack technique
 
-- Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
-- Supabase (PostgreSQL + Auth + RLS) via `@supabase/ssr`
-- API routes Next.js, graphiques SVG faits maison (éco-conception)
-- Passerelle Python (cartes TIVA C ↔ Supabase)
+| Couche | Technologie |
+|--------|-------------|
+| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS v4 |
+| Backend | API Routes Next.js |
+| Base de données | Supabase (PostgreSQL + Auth + RLS) |
+| Graphiques | SVG faits main (éco-conception) + Recharts pour les courbes d'alcoolémie |
+| Passerelle hardware | Script Python (`passerelle.py`) ↔ cartes TIVA C via Bluetooth |
 
 ## Installation
 
-```powershell
+```bash
+# 1. Installer les dépendances
 npm install
+
+# 2. Copier et remplir les variables d'environnement
+cp .env.example .env.local
+
+# 3. Lancer le serveur de développement
 npm run dev
-# http://127.0.0.1:3000
+# → http://localhost:3000
 ```
 
-## Variables d'environnement (`.env.local`)
+## Variables d'environnement
 
-```env
-NEXT_PUBLIC_SUPABASE_URL="https://fdlwkvsovkewlfwnrpvm.supabase.co"
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."
-FOOTBALL_API_BASE_URL="https://soccer.highlightly.net"
-FOOTBALL_API_KEY="..."
-FOOTBALL_SEASON="2026"
-```
+Voir [`.env.example`](.env.example) pour la liste complète. Les variables obligatoires :
 
-## Base de données - à exécuter une fois dans Supabase SQL Editor
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Clé publique (anon) Supabase |
+| `FOOTBALL_API_BASE_URL` | URL de l'API Football (highlightly.net) |
+| `FOOTBALL_API_KEY` | Clé d'API Football |
+| `FOOTBALL_SEASON` | Saison en cours (`2026`) |
 
-Dans l'ordre :
+Variables optionnelles : `FANBAR_BRIDGE_URL`, `SENSOR_WRITE_TOKEN`.
 
-1. `supabase-sound-policies.sql` - table `g1a_sound` (déjà en place).
-2. `supabase-events-policies.sql` - table `g1a_events`.
-3. **`supabase-g1a-auth.sql`** - **nouveau** : comptes, pronostics, diffusions.
-   Crée `g1a_profiles`, `g1a_predictions`, `g1a_broadcasts` (avec RLS),
-   la fonction de promotion gérant et un seed de résumés Coupe du Monde 2026
-   (chaîne L'Équipe, disponibles en France).
-4. **`supabase-crossgroup-read.sql`** - **nouveau** : ajoute une policy de
-   LECTURE seule pour `anon`/`authenticated` sur les capteurs de G1D
-   (`g1d_mq3_measurements`) et G1E (`g1e_measurements`), qui ne les exposaient
-   pas encore. Indispensable pour afficher alcoolémie + température/humidité.
+## Base de données
 
-Tant que `supabase-g1a-auth.sql` n'est pas exécuté, le site reste fonctionnel
-(la page Diffusion affiche une sélection par défaut, les comptes utilisent un
-profil minimal), mais les pronostics et la gestion des diffusions nécessitent ces
-tables.
+Les tables sont créées via des fichiers SQL à exécuter **une seule fois** dans le SQL Editor de Supabase, **dans cet ordre** :
+
+| # | Fichier | Tables créées |
+|---|---------|---------------|
+| 1 | [`sql/supabase-events-policies.sql`](sql/supabase-events-policies.sql) | `g1a_events` |
+| 2 | [`sql/supabase-sound-policies.sql`](sql/supabase-sound-policies.sql) | RLS sur `g1a_sound` |
+| 3 | [`sql/supabase-g1a-auth.sql`](sql/supabase-g1a-auth.sql) | `g1a_profiles`, `g1a_predictions`, `g1a_broadcasts` |
+| 4 | [`sql/supabase-crossgroup-read.sql`](sql/supabase-crossgroup-read.sql) | RLS lecture `g1d_mq3_measurements`, `G1E_measurements` |
+| 5 | [`sql/supabase-alcohol-links.sql`](sql/supabase-alcohol-links.sql) | `g1a_subject_aliases`, `g1a_subject_links` |
+
+## Le réseau de capteurs
+
+| Groupe | Table Supabase | Donnée exploitée |
+|--------|----------------|------------------|
+| **G1A** (nous) | `g1a_sound` | Niveau sonore (dB) par carte électronique |
+| G1B | `g1b_compteur_personnes` | Affluence (comptage ultrason entrées/sorties) |
+| G1C | `g1c_smoke` | Fumée / qualité de l'air (ppm) |
+| G1D | `g1d_mq3_measurements` | Alcoolémie par sujet (MQ-3) |
+| G1E | `G1E_measurements` | Température + humidité |
+
+Les domaines sans données passent en « en attente » et s'activent dès que le groupe publie des mesures.
 
 ## Comptes et rôles
 
-- Inscription / connexion via **Supabase Auth** (mot de passe chiffré, jamais stocké
-  en clair). Pages `/register` et `/login`.
-- Deux rôles : `client` (par défaut) et `gerant`.
-- Pour devenir gérant : page `/account` → « Devenir gérant » → code d'accès.
-  Code par défaut : **`FANBAR-GERANT-2026`** (modifiable dans `supabase-g1a-auth.sql`,
-  fonction `g1a_claim_gerant`). La promotion passe par une fonction `SECURITY DEFINER`
-  pour empêcher toute auto-promotion (anti-escalade de privilège).
-- Le gérant débloque : création d'événements, réglage des seuils, gestion des
-  diffusions vidéo.
+- **Inscription / connexion** via Supabase Auth (mot de passe chiffré, jamais stocké en clair)
+- **Deux rôles** : `client` (supporter, par défaut) et `gerant` (administrateur du bar)
+- **Promotion** : seul un gérant existant peut promouvoir un autre compte via la page `/account` — fonction `SECURITY DEFINER` anti-escalade de privilège
+- **Bootstrap** : le premier gérant est désigné manuellement via `sql/supabase-g1a-auth.sql` (section 2.bis)
 
-## Le réseau de capteurs (BDD partagée)
+## Fonctionnalités
 
-Le site lit **un capteur par groupe** (lecture seule pour les tables des autres
-groupes) :
+### Pages publiques
+| Page | Description |
+|------|-------------|
+| `/` | Accueil + aperçu live du réseau de capteurs |
+| `/regie` | Cockpit multi-capteurs : indices composites (ambiance, fête, confort, sécurité), alertes, occupation, prévention alcoolémie. Mode éco (15 s) |
+| `/dashboard` | Duel des deux zones de supporters (son par carte) + données salle |
+| `/diffusion` | Résumés Coupe du Monde 2026 intégrés (iframe YouTube, sans redirection) |
+| `/alcoolemie` | Suivi d'alcoolémie par personne avec graphiques d'évolution |
+| `/predictions` | Pronostics des supporters + classement public |
+| `/history` | Événements terminés + palmarès |
+| `/about` | Architecture, sécurité, éco-conception, accessibilité |
+| `/account` | Profil, équipe favorite, stats d'alcoolémie personnelles |
 
-| Groupe | Table                     | Donnée exploitée                              |
-| ------ | ------------------------- | --------------------------------------------- |
-| G1A    | `g1a_sound`               | Niveau sonore (dB) par carte - **notre capteur** |
-| G1B    | `g1b_compteur_personnes`  | Affluence (comptage ultrason entrées/sorties) |
-| G1C    | `g1c_smoke`               | Fumée / qualité de l'air (ppm, dernière valeur) |
-| G1D    | `g1d_mq3_measurements`    | Alcoolémie par sujet (MQ-3)                   |
-| G1E    | `g1e_measurements`        | Température + humidité (`type`/`value`)        |
+### Pages gérant uniquement
+| Page | Description |
+|------|-------------|
+| `/events/new` | Création d'événement (sélection du match, assignation des cartes aux zones) |
+| `/settings` | Réglage des seuils d'alerte par type de capteur |
+| `/alcoolemie` | Renommage de sujets + liaison d'un sujet à un compte utilisateur |
 
-Les domaines sans données passent automatiquement en « en attente » et s'activent
-dès que le groupe concerné publie des mesures (rafraîchissement temps réel).
+### Alcoolémie : liaison compte ↔ sujet
+Un gérant peut **associer un sujet de mesure d'alcoolémie à un compte utilisateur** depuis la page `/alcoolemie`. Le supporter voit ensuite ses propres stats dans la page `/account` (dernier taux, moyenne, max, nombre de tests).
 
-> Note : l'unité de `g1d_mq3_measurements.alcohol_level` est affichée en `g/L` avec
-> une limite légale indicative de `0.5`. Ajuster `ALCOHOL_LIMIT` dans
-> `lib/ecosystemService.ts` si l'échelle réelle diffère.
+## Structure du projet
 
-## Pages
+```
+fanbar-arena/
+├── app/                          # Pages et API Routes (Next.js App Router)
+│   ├── page.tsx                  # Page d'accueil
+│   ├── layout.tsx                # Layout principal
+│   ├── globals.css               # Styles globaux + Tailwind
+│   ├── api/                      # Endpoints API (REST)
+│   └── [pages]/                  # Pages de l'application
+├── components/
+│   ├── layout/                   # Composants de navigation et mise en page
+│   │   ├── AppShell.tsx          # Shell principal (sidebar + header)
+│   │   ├── MobileNav.tsx         # Menu burger mobile
+│   │   ├── UserMenu.tsx          # Menu utilisateur (login/logout)
+│   │   └── navItems.ts           # Configuration de la navigation
+│   ├── ui/                       # Composants UI réutilisables
+│   │   ├── GaugeRing.tsx         # Jauge circulaire SVG
+│   │   └── Sparkline.tsx         # Mini graphe SVG
+│   ├── AlcoholClient.tsx         # Suivi alcoolémie (avec graphiques Recharts)
+│   ├── DashboardClient.tsx       # Duel de zones
+│   ├── RegieClient.tsx           # Cockpit régie live
+│   └── ...                       # Autres composants de page
+├── lib/
+│   ├── constants.ts              # Constantes partagées (capacité, limites...)
+│   ├── types.ts                  # Types TypeScript du projet
+│   ├── format.ts                 # Formatage dates et valeurs
+│   ├── authGuard.ts              # Garde d'authentification serveur
+│   ├── alcoholService.ts         # Service alcoolémie (G1D)
+│   ├── ecosystemService.ts       # Agrégation multi-capteurs
+│   ├── eventService.ts           # Gestion des événements
+│   ├── fanbarService.ts          # Dashboard et scores de zones
+│   ├── soundService.ts           # Capteur son (G1A)
+│   ├── profileService.ts         # Profils et rôles
+│   └── ...                       # Autres services
+├── sql/                          # Scripts SQL Supabase (à exécuter une fois)
+├── prisma/                       # Schéma Prisma (documentation, non utilisé en prod)
+├── utils/supabase/               # Clients Supabase (client, serveur, middleware)
+├── middleware.ts                  # Middleware Next.js (refresh de session Supabase)
+├── .env.example                  # Template des variables d'environnement
+└── package.json
+```
 
-- `/` - accueil + aperçu live du réseau de capteurs
-- `/regie` - **régie live** : cockpit multi-capteurs, indices composites (ambiance,
-  fête, confort, sécurité), alertes, occupation, prévention alcoolémie. Mode éco.
-- `/dashboard` - duel des deux zones de supporters (son par carte) enrichi des
-  données salle (affluence G1B, air G1C)
-- `/diffusion` - résumés Coupe du Monde 2026 **intégrés** (iframe, sans redirection,
-  vidéos disponibles en France), gestion par le gérant
-- `/predictions` - pronostics des supporters (table `g1a_predictions`)
-- `/history` - événements terminés
-- `/events/new`, `/settings` - réservés au gérant
-- `/account` - profil, équipe favorite, accès gérant
-- `/about` - architecture, données partagées, sécurité / éco-conception / accessibilité
+## API Routes
 
-## API routes principales
-
-- `GET /api/ecosystem` - snapshot agrégé de tous les capteurs de la salle
-- `GET /api/dashboard` - duel de zones + contexte salle
-- `GET/POST /api/sound`, `GET /api/events`, etc. (voir `app/api/`)
-
-## Bonus (critères du projet)
-
-- **Sécurité** : Supabase Auth, RLS sur toutes les tables `g1a_`, rôles
-  client/gérant, promotion par fonction `SECURITY DEFINER`, lecture seule des tables
-  des autres groupes, en-têtes de sécurité.
-- **Éco-conception** : polling mis en pause quand l'onglet est masqué, mode éco
-  (15 s), `SELECT` minimaux, graphiques SVG sans librairie, vidéos en `lazy-load`.
-- **Accessibilité** : navigation clavier, focus visibles, lien d'évitement, rôles
-  ARIA, labels de formulaires, `prefers-reduced-motion`, contrastes élevés.
+| Méthode | Route | Description | Auth |
+|---------|-------|-------------|------|
+| GET | `/api/ecosystem` | Snapshot agrégé de tous les capteurs | Public |
+| GET | `/api/dashboard` | Duel de zones + contexte salle | Public |
+| GET | `/api/alcohol` | Rapport d'alcoolémie complet | Public |
+| GET/POST | `/api/sound` | Mesures sonores (POST protégé par token) | Token |
+| GET/POST | `/api/events` | Liste / création d'événements | POST: Gérant |
+| GET/PATCH | `/api/events/[id]` | Détail / mise à jour d'un événement | PATCH: Gérant |
+| GET | `/api/events/history` | Événements terminés + palmarès | Public |
+| GET | `/api/alerts` | Alertes actives | Public |
+| GET | `/api/cards` | État des cartes électroniques (via passerelle) | Public |
+| GET/POST | `/api/settings` | Seuils d'alerte | POST: Gérant |
+| GET | `/api/teams` | Recherche d'équipes (API Football) | Public |
+| GET | `/api/matches` | Matchs d'une équipe (API Football) | Public |
 
 ## Passerelle cartes électroniques
 
-`C:\Users\marou\Desktop\proj\passerelle.py` fait le pont entre les cartes TIVA C
-(Bluetooth HC-06) et Supabase :
+Le script `passerelle.py` fait le pont entre les cartes TIVA C (Bluetooth HC-06) et Supabase :
 
 ```powershell
 $env:FANBAR_CARD_PORTS="1=COM6,2=COM7"
-python C:\Users\marou\Desktop\proj\passerelle.py
+python passerelle.py
 ```
 
-Quand une carte est active, la passerelle calcule la moyenne dB sur 2 s et insère
-dans `g1a_sound` avec `electronic_card = id_card`. Le firmware (`proj.ino`) émet des
-trames `DATA;id;db` et accepte `WAKE`, `SLEEP`, `PING`.
+La passerelle détecte automatiquement les appareils Bluetooth nommés `G1A-*`, calcule le max dB sur 2 secondes et insère dans `g1a_sound`. Elle expose une API HTTP locale (`http://127.0.0.1:8765`) pour le contrôle des événements.
+
+## Critères du projet
+
+### Sécurité
+- Supabase Auth + RLS sur toutes les tables `g1a_*`
+- Rôles client/gérant avec promotion par fonction `SECURITY DEFINER`
+- Lecture seule des tables des autres groupes
+- En-têtes de sécurité (X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
+- Token de protection pour l'écriture capteur
+
+### Éco-conception
+- Polling mis en pause quand l'onglet est masqué (`visibilitychange`)
+- Mode éco (rafraîchissement 15 s au lieu de 2 s)
+- Requêtes `SELECT` minimales et ciblées
+- Graphiques SVG faits main (pas de librairie lourde sur le tableau de bord)
+- Vidéos YouTube en `lazy-load` avec `youtube-nocookie.com`
+
+### Accessibilité
+- Navigation clavier complète avec focus visible
+- Lien d'évitement « Aller au contenu »
+- Attributs ARIA sur les menus et boutons
+- Labels sur tous les champs de formulaire
+- Respect de `prefers-reduced-motion`
+- Contrastes élevés (thème sombre)

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Check, Pencil, ShieldCheck, Users, Wine } from "lucide-react";
+import { AlertTriangle, Check, Link2, Pencil, ShieldCheck, Users, Wine } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CartesianGrid,
@@ -252,12 +252,16 @@ function PersonCard({
   person,
   limit,
   gerant,
+  profiles,
   onRename,
+  onLink,
 }: {
   person: AlcoholPerson;
   limit: number;
   gerant: boolean;
+  profiles: ProfileOption[];
   onRename: (subjectId: string, alias: string) => Promise<void>;
+  onLink: (subjectId: string, userId: string | null) => Promise<void>;
 }) {
   const color = STATUS_COLOR[person.status];
   const over = person.latest >= limit;
@@ -312,6 +316,7 @@ function PersonCard({
           <div className="text-[11px] text-slate-500">
             {person.count} test(s)
             {person.deviceId ? ` · carte ${person.deviceId}` : ""}
+            {person.userId ? " · compte lié" : ""}
           </div>
         </div>
         <div className="text-right">
@@ -327,6 +332,28 @@ function PersonCard({
           </span>
         </div>
       </div>
+
+      {/* Liaison compte (gerant uniquement) */}
+      {gerant && profiles.length > 0 && (
+        <div className="mt-3 flex items-center gap-2">
+          <Link2 size={13} className="shrink-0 text-slate-500" />
+          <select
+            value={person.userId ?? ""}
+            onChange={(e) =>
+              onLink(person.subjectId, e.target.value || null)
+            }
+            aria-label="Associer à un compte"
+            className="min-h-8 flex-1 rounded-lg border border-white/10 bg-black/40 px-2 text-xs outline-none focus:border-emerald-400/70"
+          >
+            <option value="">Aucun compte lié</option>
+            {profiles.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.pseudo}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="mt-4 h-36 w-full">
         <ResponsiveContainer width="100%" height="100%">

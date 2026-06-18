@@ -1,5 +1,6 @@
 import { anonSensorClient } from "./sensorClients";
 import { clamp, getReadingStatus } from "./scores";
+import { ALCOHOL_LIMIT, ECO_HISTORY_LENGTH, VENUE_CAPACITY } from "./constants";
 import type {
   AlcoholInsights,
   AlcoholSubject,
@@ -23,9 +24,7 @@ import type {
 //   G1E        -> g1e_measurements         : temperature + humidite (type/value)
 // ===========================================================================
 
-const HISTORY = 40;
-const VENUE_CAPACITY = 50; // capacite de notre FanBar
-const ALCOHOL_LIMIT = 0.5; // limite legale indicative (g/L)
+const HISTORY = ECO_HISTORY_LENGTH;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 async function safeSelect<T>(

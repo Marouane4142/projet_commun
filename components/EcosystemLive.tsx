@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Radio, ShieldAlert } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GaugeRing } from "@/components/GaugeRing";
+import { GaugeRing } from "@/components/ui/GaugeRing";
 import { SensorCard } from "@/components/RegieClient";
 import type { EcosystemSnapshot } from "@/lib/types";
 

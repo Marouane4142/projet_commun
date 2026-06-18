@@ -13,8 +13,8 @@ import {
   Wine,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GaugeRing } from "@/components/GaugeRing";
-import { Sparkline } from "@/components/Sparkline";
+import { GaugeRing } from "@/components/ui/GaugeRing";
+import { Sparkline } from "@/components/ui/Sparkline";
 import type {
   EcoDomain,
   EcoDomainKey,

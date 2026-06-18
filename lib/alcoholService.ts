@@ -1,9 +1,9 @@
 import { anonSensorClient } from "./sensorClients";
 import { getReadingStatus } from "./scores";
+import { ALCOHOL_LIMIT, ALCOHOL_MAX_ROWS } from "./constants";
 import type { AlcoholPerson, AlcoholReport, AlcoholPoint } from "./types";
 
-const ALCOHOL_LIMIT = 0.5; // limite legale indicative (g/L)
-const MAX_ROWS = 2000;
+const MAX_ROWS = ALCOHOL_MAX_ROWS;
 
 type Row = {
   measured_at: string;
@@ -140,4 +140,100 @@ function emptyReport(generatedAt: string): AlcoholReport {
     recentCount: 0,
     generatedAt,
   };
+}
+
+/**
+ * Stats d'alcoolemie personnelles : renvoie uniquement les donnees des sujets
+ * lies au compte utilisateur donne (via la table g1a_subject_links).
+ */
+export async function getPersonalAlcoholStats(
+  userId: string,
+): Promise<AlcoholPerson[]> {
+  try {
+    const supabase = anonSensorClient();
+
+    // Recupere les subject_id lies a ce compte.
+    const { data: linkRows } = await supabase
+      .from("g1a_subject_links")
+      .select("subject_id")
+      .eq("user_id", userId);
+
+    const subjectIds = (linkRows ?? []).map((r: { subject_id: string }) =>
+      String(r.subject_id),
+    );
+
+    if (subjectIds.length === 0) return [];
+
+    // Charge les mesures de ces sujets.
+    const { data, error } = await supabase
+      .from("g1d_mq3_measurements")
+      .select("measured_at, alcohol_level, subject_id, device_id")
+      .in("subject_id", subjectIds)
+      .order("measured_at", { ascending: false })
+      .limit(MAX_ROWS);
+
+    if (error || !data) return [];
+
+    const rows = data as Row[];
+
+    // Alias eventuels.
+    const aliases = new Map<string, string>();
+    try {
+      const { data: aliasRows } = await supabase
+        .from("g1a_subject_aliases")
+        .select("subject_id, alias");
+      for (const a of (aliasRows ?? []) as { subject_id: string; alias: string }[]) {
+        aliases.set(String(a.subject_id), a.alias);
+      }
+    } catch {
+      /* table absente */
+    }
+
+    // Regroupement par personne.
+    const bySubject = new Map<string, Row[]>();
+    for (const r of rows) {
+      const key = String(r.subject_id ?? "anonyme");
+      const list = bySubject.get(key);
+      if (list) list.push(r);
+      else bySubject.set(key, [r]);
+    }
+
+    const people: AlcoholPerson[] = [];
+    for (const [subjectId, list] of bySubject) {
+      const sorted = [...list].sort(
+        (a, b) =>
+          new Date(a.measured_at).getTime() - new Date(b.measured_at).getTime(),
+      );
+      const series: AlcoholPoint[] = sorted.map((r) => ({
+        t: r.measured_at,
+        level: r.alcohol_level,
+      }));
+      const levels = sorted.map((r) => r.alcohol_level);
+      const latestRow = sorted[sorted.length - 1];
+      const latest = latestRow.alcohol_level;
+      const max = Math.max(...levels);
+      const average = round2(
+        levels.reduce((s, v) => s + v, 0) / levels.length,
+      );
+
+      people.push({
+        subjectId,
+        name: aliases.get(subjectId) ?? `Personne ${subjectId}`,
+        userId,
+        deviceId:
+          latestRow.device_id != null ? String(latestRow.device_id) : null,
+        latest,
+        max,
+        average,
+        count: sorted.length,
+        lastTestAt: latestRow.measured_at,
+        status: getReadingStatus("alcohol", latest),
+        series,
+      });
+    }
+
+    return people.sort((a, b) => b.latest - a.latest);
+  } catch {
+    return [];
+  }
 }

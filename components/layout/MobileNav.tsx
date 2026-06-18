@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { navItems } from "@/components/navItems";
+import { navItems } from "@/components/layout/navItems";
 
 /** Menu burger pour mobile (telephone). Contient tous les liens de navigation. */
 export function MobileNav({ gerant }: { gerant: boolean }) {

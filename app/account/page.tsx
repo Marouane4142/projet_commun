@@ -1,7 +1,9 @@
-import { CalendarDays, Mail, UserRound } from "lucide-react";
+import { CalendarDays, Mail, UserRound, Wine } from "lucide-react";
 import { redirect } from "next/navigation";
 import { AccountClient } from "@/components/AccountClient";
 import { getCurrentUser } from "@/lib/profileService";
+import { getPersonalAlcoholStats } from "@/lib/alcoholService";
+import { ALCOHOL_LIMIT } from "@/lib/constants";
 
 export const metadata = { title: "Mon compte - FanBar Arena" };
 export const dynamic = "force-dynamic";
@@ -22,6 +24,9 @@ export default async function AccountPage() {
         year: "numeric",
       })
     : "-";
+
+  // Stats d'alcoolemie personnelles (si un gerant a lie ce compte a un sujet).
+  const myAlcoholStats = await getPersonalAlcoholStats(user.id);
 
   return (
     <div className="grid gap-6">
@@ -56,6 +61,73 @@ export default async function AccountPage() {
         initialFavorite={profile?.favoriteTeam ?? null}
         role={role}
       />
+
+      {/* Stats d'alcoolemie personnelles */}
+      {myAlcoholStats.length > 0 && (
+        <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] p-6">
+          <h2 className="flex items-center gap-2 text-lg font-black">
+            <Wine size={18} className="text-amber-300" />
+            Mon suivi d&apos;alcoolémie
+          </h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Données associées à ton compte par le gérant du bar. Usage personnel uniquement.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {myAlcoholStats.map((person) => {
+              const over = person.latest >= ALCOHOL_LIMIT;
+              return (
+                <div
+                  key={person.subjectId}
+                  className="rounded-xl border border-white/10 bg-black/20 p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold">{person.name}</span>
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-black uppercase ${
+                        over
+                          ? "bg-rose-500/20 text-rose-200"
+                          : "bg-emerald-500/20 text-emerald-200"
+                      }`}
+                    >
+                      {over ? "Au-dessus" : "OK"}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                    <div>
+                      <div className="font-black text-lg" style={{ color: over ? "#f87171" : "#34d399" }}>
+                        {person.latest.toFixed(2).replace(".", ",")}
+                      </div>
+                      <div className="text-slate-500">Dernier (g/L)</div>
+                    </div>
+                    <div>
+                      <div className="font-black text-lg text-slate-200">
+                        {person.average.toFixed(2).replace(".", ",")}
+                      </div>
+                      <div className="text-slate-500">Moyenne</div>
+                    </div>
+                    <div>
+                      <div className="font-black text-lg text-slate-200">
+                        {person.max.toFixed(2).replace(".", ",")}
+                      </div>
+                      <div className="text-slate-500">Max</div>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-[11px] text-slate-500">
+                    {person.count} test(s) · dernier :{" "}
+                    {new Date(person.lastTestAt).toLocaleString("fr-FR", {
+                      timeZone: "UTC",
+                      day: "2-digit",
+                      month: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
